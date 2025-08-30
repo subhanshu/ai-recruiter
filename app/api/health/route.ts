@@ -6,11 +6,17 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Test Supabase connection
+    // Test Supabase connection by creating client and testing basic functionality
     const supabaseClient = await createClient(cookies());
-    const { error } = await supabaseClient.from('information_schema.tables').select('table_name').limit(1);
     
-    if (error) {
+    // Try to query a table that should exist (Job table from our schema)
+    const { error } = await supabaseClient
+      .from('Job')
+      .select('count')
+      .limit(0);
+    
+    // If connection works but table doesn't exist, that's fine for health check
+    if (error && error.code !== 'PGRST106' && error.code !== 'PGRST205') {
       throw error;
     }
     
