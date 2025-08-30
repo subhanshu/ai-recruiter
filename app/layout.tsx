@@ -50,16 +50,41 @@ export default function RootLayout({
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
                 <li className="nav-item">
-                  <Link className="nav-link" href="/">
+                  <Link className="nav-link" href="/dashboard">
                     <i className="bi bi-house-door me-1"></i>
                     Dashboard
                   </Link>
                 </li>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/jobs/new">
-                    <i className="bi bi-plus-circle me-1"></i>
-                    Add Job
-                  </Link>
+                <li className="nav-item dropdown">
+                  <a 
+                    className="nav-link dropdown-toggle" 
+                    href="#" 
+                    role="button" 
+                    data-bs-toggle="dropdown"
+                  >
+                    <i className="bi bi-briefcase me-1"></i>
+                    Jobs
+                  </a>
+                  <ul className="dropdown-menu">
+                    <li><Link className="dropdown-item" href="/jobs">All Jobs</Link></li>
+                    <li><Link className="dropdown-item" href="/jobs/new">Add Job</Link></li>
+                  </ul>
+                </li>
+                <li className="nav-item dropdown">
+                  <a 
+                    className="nav-link dropdown-toggle" 
+                    href="#" 
+                    role="button" 
+                    data-bs-toggle="dropdown"
+                  >
+                    <i className="bi bi-people me-1"></i>
+                    Candidates
+                  </a>
+                  <ul className="dropdown-menu">
+                    <li><Link className="dropdown-item" href="/candidates">All Candidates</Link></li>
+                    <li><Link className="dropdown-item" href="/candidates/new">Add Candidate</Link></li>
+                    <li><Link className="dropdown-item" href="/candidates/bulk">Bulk Upload</Link></li>
+                  </ul>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" href="/ai-assistant">
