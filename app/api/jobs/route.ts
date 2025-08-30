@@ -9,7 +9,7 @@ export async function GET() {
     const { data: jobs, error } = await supabaseClient
       .from('Job')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('createdAt', { ascending: false });
     
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -27,11 +27,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, description, requirements, jdRaw, recruiterId } = body;
+    const { title, jdRaw, questions, recruiterId } = body;
     
-    if (!title || !description) {
+    if (!title || !jdRaw) {
       return NextResponse.json(
-        { error: 'Title and description are required' },
+        { error: 'Title and job description are required' },
         { status: 400 }
       );
     }
@@ -42,11 +42,8 @@ export async function POST(req: Request) {
       .insert([
         {
           title,
-          description,
-          requirements,
           jdRaw,
           recruiterId: recruiterId || 'default-recruiter', // TODO: Get from auth
-          status: 'active'
         }
       ])
       .select()
@@ -54,6 +51,23 @@ export async function POST(req: Request) {
     
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // If questions are provided, insert them
+    if (questions && questions.length > 0) {
+      const questionsToInsert = questions.map((text: string, index: number) => ({
+        text,
+        order: index,
+        jobId: job.id
+      }));
+      
+      const { error: questionsError } = await supabaseClient
+        .from('Question')
+        .insert(questionsToInsert);
+      
+      if (questionsError) {
+        console.error('Error inserting questions:', questionsError);
+      }
     }
     
     return NextResponse.json(job, { status: 201 });

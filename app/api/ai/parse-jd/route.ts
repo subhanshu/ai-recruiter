@@ -43,6 +43,24 @@ JD:\n${jd}`;
 
   if (!r.ok) {
     const text = await r.text();
+    
+    // If OpenAI quota exceeded, provide fallback response
+    if (text.includes('quota') || text.includes('insufficient_quota')) {
+      const mockQuestions = [
+        "Can you tell us about your experience with the technologies mentioned in this role?",
+        "What interests you most about this position?",
+        "Describe a challenging project you've worked on recently.",
+        "How do you approach problem-solving in your work?",
+        "What are your career goals and how does this role align with them?"
+      ];
+      
+      return NextResponse.json({
+        title: jd.split('\n')[0].substring(0, 100) || 'Extracted Position',
+        questions: mockQuestions,
+        note: 'OpenAI quota exceeded - using fallback questions'
+      });
+    }
+    
     return NextResponse.json({ error: text }, { status: 500 });
   }
   const data = await r.json();

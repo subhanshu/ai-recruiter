@@ -7,9 +7,8 @@ import Link from 'next/link';
 interface Job {
   id: string;
   title: string;
-  description: string;
-  status: string;
-  created_at: string;
+  jdRaw: string;
+  createdAt: string;
 }
 
 interface Candidate {
@@ -40,7 +39,7 @@ export default function Dashboard() {
       const { data: jobsData, error: jobsError } = await supabaseClient
         .from('Job')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('createdAt', { ascending: false })
         .limit(5);
       
       if (jobsError) {
@@ -59,7 +58,7 @@ export default function Dashboard() {
 
       // Calculate stats
       const totalJobs = jobsData?.length || 0;
-      const activeJobs = jobsData?.filter(job => job.status === 'active').length || 0;
+      const activeJobs = jobsData?.length || 0; // All jobs are considered active for now
       
       setStats({
         totalJobs,
@@ -192,18 +191,19 @@ export default function Dashboard() {
                         </div>
                         <div className="flex-grow-1 ms-3">
                           <h6 className="mb-1 fw-semibold">{job.title}</h6>
-                          <p className="mb-1 text-muted small">{job.description}</p>
+                          <p className="mb-1 text-muted small">
+                            {job.jdRaw.length > 100 
+                              ? `${job.jdRaw.substring(0, 100)}...` 
+                              : job.jdRaw
+                            }
+                          </p>
                           <small className="text-muted">
-                            {new Date(job.created_at).toLocaleDateString()}
+                            {new Date(job.createdAt).toLocaleDateString()}
                           </small>
                         </div>
                         <div className="flex-shrink-0">
-                          <span className={`badge ${
-                            job.status === 'active' 
-                              ? 'bg-success' 
-                              : 'bg-secondary'
-                          }`}>
-                            {job.status}
+                          <span className="badge bg-success">
+                            Active
                           </span>
                         </div>
                       </div>
