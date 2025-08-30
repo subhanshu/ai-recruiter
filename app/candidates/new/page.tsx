@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ interface Job {
 
 export default function AddCandidatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [candidate, setCandidate] = useState({
@@ -53,6 +54,14 @@ export default function AddCandidatePage() {
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  useEffect(() => {
+    // Pre-select job if passed in URL
+    const jobIdFromUrl = searchParams.get('jobId');
+    if (jobIdFromUrl) {
+      setCandidate(prev => ({ ...prev, jobId: jobIdFromUrl }));
+    }
+  }, [searchParams]);
 
   const fetchJobs = async () => {
     try {
@@ -160,7 +169,14 @@ export default function AddCandidatePage() {
             </Link>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Add New Candidate</h1>
-          <p className="text-gray-600 mt-2">Add a candidate manually or upload their resume for AI analysis</p>
+          <p className="text-gray-600 mt-2">
+            Add a candidate manually or upload their resume for AI analysis
+            {selectedJob && (
+              <span className="block text-blue-600 font-medium mt-1">
+                For position: {selectedJob.title}
+              </span>
+            )}
+          </p>
         </div>
       </div>
 

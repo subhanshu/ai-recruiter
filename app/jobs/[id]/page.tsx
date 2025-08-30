@@ -252,6 +252,12 @@ export default function JobDetailPage() {
           </div>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-0">
+          <Link href={`/candidates/new?jobId=${jobId}`}>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Candidate
+            </Button>
+          </Link>
           <Link href={`/jobs/${jobId}/edit`}>
             <Button variant="outline">
               <Edit className="w-4 h-4 mr-2" />
@@ -259,7 +265,7 @@ export default function JobDetailPage() {
             </Button>
           </Link>
           <Link href={`/outreach?jobId=${jobId}`}>
-            <Button>
+            <Button variant="outline">
               <MessageSquare className="w-4 h-4 mr-2" />
               Send Outreach
             </Button>
@@ -341,12 +347,20 @@ export default function JobDetailPage() {
                   <CardTitle>Candidates</CardTitle>
                   <CardDescription>All candidates who have applied for this position</CardDescription>
                 </div>
-                <Link href={`/outreach?jobId=${jobId}`}>
-                  <Button size="sm">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Send Outreach
-                  </Button>
-                </Link>
+                <div className="flex gap-2">
+                  <Link href={`/candidates/new?jobId=${jobId}`}>
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Candidate
+                    </Button>
+                  </Link>
+                  <Link href={`/outreach?jobId=${jobId}`}>
+                    <Button size="sm" variant="outline">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Send Outreach
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

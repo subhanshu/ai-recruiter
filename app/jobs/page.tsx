@@ -334,24 +334,30 @@ export default function JobsPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Link href={`/jobs/${job.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                    </Link>
-                    <Link href={`/jobs/${job.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
+                                     <div className="flex items-center gap-2">
+                     <Link href={`/candidates/new?jobId=${job.id}`}>
+                       <Button size="sm">
+                         <Plus className="w-4 h-4 mr-2" />
+                         Add Candidate
+                       </Button>
+                     </Link>
+                     <Link href={`/jobs/${job.id}`}>
+                       <Button variant="outline" size="sm">
+                         <Eye className="w-4 h-4 mr-2" />
+                         View
+                       </Button>
+                     </Link>
+                     <Link href={`/jobs/${job.id}/edit`}>
+                       <Button variant="outline" size="sm">
+                         <Edit className="w-4 h-4 mr-2" />
+                         Edit
+                       </Button>
+                     </Link>
+                     <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                       <Trash2 className="w-4 h-4 mr-2" />
+                       Delete
+                     </Button>
+                   </div>
                 </div>
               </CardContent>
             </Card>
