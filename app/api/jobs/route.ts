@@ -41,9 +41,10 @@ export async function POST(req: Request) {
       .from('Job')
       .insert([
         {
+          id: crypto.randomUUID(), // Generate UUID
           title,
           jdRaw,
-          recruiterId: recruiterId || 'default-recruiter', // TODO: Get from auth
+          recruiterId: recruiterId || null, // TODO: Get from auth
         }
       ])
       .select()
