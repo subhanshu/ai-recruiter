@@ -281,9 +281,9 @@ export default function Dashboard() {
                   </Link>
                 </div>
                 <div className="col-md-3 mb-3">
-                  <Link href="/ai-assistant" className="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                    <i className="bi bi-robot fs-1 mb-2"></i>
-                    <span>AI Assistant</span>
+                  <Link href="/interview" className="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                    <i className="bi bi-camera-video fs-1 mb-2"></i>
+                    <span>AI Interview</span>
                   </Link>
                 </div>
                 <div className="col-md-3 mb-3">

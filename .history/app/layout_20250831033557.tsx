@@ -80,10 +80,10 @@ export default function RootLayout({
                     Account
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" href="/profile">Profile</Link></li>
-                    <li><Link className="dropdown-item" href="/settings">Settings</Link></li>
+                    <li><a className="dropdown-item" href="/profile">Profile</a></li>
+                    <li><a className="dropdown-item" href="/settings">Settings</a></li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li><Link className="dropdown-item" href="/logout">Logout</Link></li>
+                    <li><a className="dropdown-item" href="/logout">Logout</a></li>
                   </ul>
                 </li>
               </ul>

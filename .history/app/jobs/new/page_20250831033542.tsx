@@ -153,10 +153,10 @@ export default function NewJobPage() {
                 )}
 
                 <div className="d-flex gap-2 justify-content-end">
-                  <Link href="/" className="btn btn-outline-secondary">
+                  <a href="/" className="btn btn-outline-secondary">
                     <i className="bi bi-arrow-left me-2"></i>
                     Cancel
-                  </Link>
+                  </a>
                   <button
                     type="submit"
                     disabled={loading}

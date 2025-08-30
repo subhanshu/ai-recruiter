@@ -167,14 +167,10 @@ export default function InterviewPage() {
 
   if (loading) {
     return (
-      <div className="container py-5">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-          <div className="text-center">
-            <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3 text-muted">Loading interview...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading interview...</p>
         </div>
       </div>
     );
@@ -182,16 +178,14 @@ export default function InterviewPage() {
 
   if (error) {
     return (
-      <div className="container py-5">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-          <div className="text-center">
-            <div className="text-danger" style={{ fontSize: '4rem' }}>⚠️</div>
-            <h1 className="h2 fw-bold text-dark mb-3">Interview Link Error</h1>
-            <p className="text-muted mb-4">{error}</p>
-            <p className="small text-muted">
-              Please contact the recruiter for a new interview link.
-            </p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Interview Link Error</h1>
+          <p className="text-gray-600">{error}</p>
+          <p className="text-sm text-gray-500 mt-4">
+            Please contact the recruiter for a new interview link.
+          </p>
         </div>
       </div>
     );
@@ -199,53 +193,42 @@ export default function InterviewPage() {
 
   if (!outreachLink || !job || !candidate) {
     return (
-      <div className="container py-5">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-          <div className="text-center">
-            <div className="text-danger" style={{ fontSize: '4rem' }}>❌</div>
-            <h1 className="h2 fw-bold text-dark mb-3">Interview Not Found</h1>
-            <p className="text-muted">The requested interview could not be loaded.</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-6xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Interview Not Found</h1>
+          <p className="text-gray-600">The requested interview could not be loaded.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      <div className="card border-0 shadow mb-4">
-        <div className="card-header bg-dark text-white">
-          <h1 className="card-title mb-0 h3">
-            <i className="bi bi-camera-video me-2"></i>
-            AI Interview Session
-          </h1>
-        </div>
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <h5 className="text-primary">
-                <i className="bi bi-briefcase me-2"></i>
-                Job Details
-              </h5>
-              <p className="mb-1"><strong>Title:</strong> {job.title}</p>
-              <p className="mb-0 text-muted">{job.description}</p>
-            </div>
-            <div className="col-md-6 mb-3">
-              <h5 className="text-info">
-                <i className="bi bi-person me-2"></i>
-                Candidate Details
-              </h5>
-              <p className="mb-1"><strong>Name:</strong> {candidate.name}</p>
-              <p className="mb-0 text-muted">{candidate.email}</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">AI Interview Session</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Job Details</h3>
+                <p className="text-gray-600"><strong>Title:</strong> {job.title}</p>
+                <p className="text-gray-600"><strong>Description:</strong> {job.description}</p>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Candidate Details</h3>
+                <p className="text-gray-600"><strong>Name:</strong> {candidate.name}</p>
+                <p className="text-gray-600"><strong>Email:</strong> {candidate.email}</p>
+              </div>
             </div>
           </div>
+          
+          <InterviewDemo 
+            jobTitle={job.title}
+            jobDescription={job.description}
+          />
         </div>
       </div>
-      
-      <InterviewDemo 
-        jobTitle={job.title}
-        jobDescription={job.description}
-      />
     </div>
   );
 }

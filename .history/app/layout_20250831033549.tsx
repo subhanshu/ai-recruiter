@@ -56,16 +56,16 @@ export default function RootLayout({
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/jobs/new">
+                  <a className="nav-link" href="/jobs/new">
                     <i className="bi bi-plus-circle me-1"></i>
                     Add Job
-                  </Link>
+                  </a>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/ai-assistant">
+                  <a className="nav-link" href="/ai-assistant">
                     <i className="bi bi-robot me-1"></i>
                     AI Assistant
-                  </Link>
+                  </a>
                 </li>
               </ul>
               <ul className="navbar-nav">
@@ -80,10 +80,10 @@ export default function RootLayout({
                     Account
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" href="/profile">Profile</Link></li>
-                    <li><Link className="dropdown-item" href="/settings">Settings</Link></li>
+                    <li><a className="dropdown-item" href="/profile">Profile</a></li>
+                    <li><a className="dropdown-item" href="/settings">Settings</a></li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li><Link className="dropdown-item" href="/logout">Logout</Link></li>
+                    <li><a className="dropdown-item" href="/logout">Logout</a></li>
                   </ul>
                 </li>
               </ul>

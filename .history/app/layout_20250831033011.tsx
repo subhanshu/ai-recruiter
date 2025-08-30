@@ -3,7 +3,6 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
 import Script from "next/script";
-import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +34,10 @@ export default function RootLayout({
       <body className={geistSans.variable}>
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
           <div className="container">
-            <Link className="navbar-brand fw-bold" href="/">
+            <a className="navbar-brand fw-bold" href="/">
               <i className="bi bi-people-fill me-2"></i>
               AI Recruiter
-            </Link>
+            </a>
             <button 
               className="navbar-toggler" 
               type="button" 
@@ -50,22 +49,22 @@ export default function RootLayout({
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto">
                 <li className="nav-item">
-                  <Link className="nav-link" href="/">
+                  <a className="nav-link" href="/">
                     <i className="bi bi-house-door me-1"></i>
                     Dashboard
-                  </Link>
+                  </a>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/jobs/new">
+                  <a className="nav-link" href="/jobs/new">
                     <i className="bi bi-plus-circle me-1"></i>
                     Add Job
-                  </Link>
+                  </a>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/ai-assistant">
+                  <a className="nav-link" href="/ai-assistant">
                     <i className="bi bi-robot me-1"></i>
                     AI Assistant
-                  </Link>
+                  </a>
                 </li>
               </ul>
               <ul className="navbar-nav">
@@ -80,10 +79,10 @@ export default function RootLayout({
                     Account
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" href="/profile">Profile</Link></li>
-                    <li><Link className="dropdown-item" href="/settings">Settings</Link></li>
+                    <li><a className="dropdown-item" href="/profile">Profile</a></li>
+                    <li><a className="dropdown-item" href="/settings">Settings</a></li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li><Link className="dropdown-item" href="/logout">Logout</Link></li>
+                    <li><a className="dropdown-item" href="/logout">Logout</a></li>
                   </ul>
                 </li>
               </ul>
