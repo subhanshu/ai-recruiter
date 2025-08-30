@@ -1,0 +1,87 @@
+// Datasource and generator
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobs      Job[]
+}
+
+model Job {
+  id            String     @id @default(cuid())
+  title         String
+  department    String?
+  location      String?
+  responsibilities String?
+  requiredSkills String?
+  qualifications String?
+  jdRaw         String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  recruiterId   String?
+  recruiter     User?      @relation(fields: [recruiterId], references: [id])
+  questions     Question[]
+  candidates    Candidate[]
+  interviews    Interview[]
+  outreachLinks OutreachLink[]
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  text      String
+  order     Int
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Candidate {
+  id          String       @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  resumeUrl   String?
+  linkedinUrl String?
+  createdAt   DateTime     @default(now())
+  jobId       String
+  job         Job          @relation(fields: [jobId], references: [id])
+  interviews  Interview[]
+  outreachLinks OutreachLink[]
+}
+
+model Interview {
+  id           String    @id @default(cuid())
+  candidateId  String
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+  jobId        String
+  job          Job       @relation(fields: [jobId], references: [id])
+  createdAt    DateTime  @default(now())
+  recordingUrl String?
+  transcript   String?
+  summary      String?
+  score        Float?
+}
+
+model OutreachLink {
+  id           String   @id @default(cuid())
+  token        String   @unique
+  candidateId  String
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+  jobId        String
+  job          Job       @relation(fields: [jobId], references: [id])
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime @default(now())
+}
+
+
