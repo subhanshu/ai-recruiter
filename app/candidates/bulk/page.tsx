@@ -43,10 +43,12 @@ export default function BulkUploadPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [resumeFiles, setResumeFiles] = useState<File[]>([]);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [candidates, setCandidates] = useState<CandidateImport[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'csv' | 'resumes'>('csv');
 
   useEffect(() => {
     fetchJobs();
@@ -136,6 +138,92 @@ export default function BulkUploadPage() {
     reader.readAsText(uploadedFile);
   };
 
+  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const validFiles = files.filter(file => {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      return allowedTypes.includes(file.type) && file.size <= 10 * 1024 * 1024;
+    });
+    
+    setResumeFiles(validFiles);
+    setCandidates([]);
+    setPreviewMode(false);
+  };
+
+  const processResumes = async () => {
+    if (!selectedJobId || resumeFiles.length === 0) return;
+    
+    setImporting(true);
+    setProgress(0);
+    
+    const processedCandidates: CandidateImport[] = [];
+    
+    for (let i = 0; i < resumeFiles.length; i++) {
+      const file = resumeFiles[i];
+      setProgress((i / resumeFiles.length) * 100);
+      
+      try {
+        const formData = new FormData();
+        formData.append('resume', file);
+        
+        const response = await fetch('/api/ai/parse-resume', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            processedCandidates.push({
+              name: result.data.name || file.name.replace(/\.[^/.]+$/, ""),
+              email: result.data.email || '',
+              phone: result.data.phone || '',
+              linkedinUrl: result.data.linkedinUrl || '',
+              status: result.data.email ? 'valid' : 'invalid',
+              errors: result.data.email ? [] : ['No email found in resume']
+            });
+          } else {
+            processedCandidates.push({
+              name: file.name.replace(/\.[^/.]+$/, ""),
+              email: '',
+              phone: '',
+              linkedinUrl: '',
+              status: 'invalid',
+              errors: ['Failed to parse resume']
+            });
+          }
+        } else {
+          processedCandidates.push({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            email: '',
+            phone: '',
+            linkedinUrl: '',
+            status: 'invalid',
+            errors: ['Failed to process resume']
+          });
+        }
+      } catch (error) {
+        processedCandidates.push({
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          email: '',
+          phone: '',
+          linkedinUrl: '',
+          status: 'invalid',
+          errors: ['Error processing resume']
+        });
+      }
+    }
+    
+    setCandidates(processedCandidates);
+    setPreviewMode(true);
+    setProgress(100);
+    setImporting(false);
+  };
+
   const handleImport = async () => {
     if (!selectedJobId) return;
 
@@ -194,12 +282,54 @@ export default function BulkUploadPage() {
             </Link>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Bulk Upload Candidates</h1>
-          <p className="text-gray-600 mt-2">Upload multiple candidates from CSV or Excel file</p>
+          <p className="text-gray-600 mt-2">Upload multiple candidates from CSV file or individual resumes</p>
         </div>
       </div>
 
       {!previewMode ? (
         <div className="space-y-8">
+          {/* Upload Mode Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Choose Upload Method</CardTitle>
+              <CardDescription>
+                Select how you want to upload candidates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    uploadMode === 'csv' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setUploadMode('csv')}
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h3 className="font-medium">CSV Upload</h3>
+                      <p className="text-sm text-gray-600">Upload candidates from a CSV file</p>
+                    </div>
+                  </div>
+                </div>
+                <div 
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    uploadMode === 'resumes' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setUploadMode('resumes')}
+                >
+                  <div className="flex items-center gap-3">
+                    <Bot className="w-6 h-6 text-green-600" />
+                    <div>
+                      <h3 className="font-medium">Resume Upload</h3>
+                      <p className="text-sm text-gray-600">Upload multiple resumes for AI parsing</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Upload Instructions */}
           <Card>
             <CardHeader>
@@ -261,42 +391,150 @@ export default function BulkUploadPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload File</CardTitle>
-                <CardDescription>
-                  Select your CSV or Excel file with candidate data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="file">Choose File</Label>
-                  <Input
-                    id="file"
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={handleFileUpload}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="job">Job Position</Label>
-                  <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select job position" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobs.map((job) => (
-                        <SelectItem key={job.id} value={job.id}>
-                          {job.title}
-                          {job.department && ` - ${job.department}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+            {uploadMode === 'csv' ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload CSV File</CardTitle>
+                  <CardDescription>
+                    Select your CSV or Excel file with candidate data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="file">Choose File</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="job">Job Position</Label>
+                    <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select job position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobs.map((job) => (
+                          <SelectItem key={job.id} value={job.id}>
+                            {job.title}
+                            {job.department && ` - ${job.department}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {file && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm">{file.name}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="w-5 h-5" />
+                    Upload Resumes for AI Parsing
+                  </CardTitle>
+                  <CardDescription>
+                    Upload multiple resume files (PDF, DOC, DOCX) and let AI extract candidate information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="job-resumes">Job Position</Label>
+                    <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select job position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobs.map((job) => (
+                          <SelectItem key={job.id} value={job.id}>
+                            {job.title}
+                            {job.department && ` - ${job.department}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="resumes">Upload Resume Files</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <Input
+                        id="resumes"
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={handleResumeUpload}
+                        multiple
+                        className="hidden"
+                      />
+                      <label htmlFor="resumes" className="cursor-pointer">
+                        <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">
+                          Click to upload or drag and drop multiple resumes
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          PDF, DOC, DOCX (max 10MB each)
+                        </p>
+                      </label>
+                    </div>
+                  </div>
+
+                  {resumeFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selected Files ({resumeFiles.length})</Label>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {resumeFiles.map((file, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                            <FileText className="w-4 h-4 text-gray-600" />
+                            <span className="text-sm text-gray-700 flex-1">{file.name}</span>
+                            <span className="text-xs text-gray-500">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <Button 
+                        onClick={processResumes} 
+                        disabled={!selectedJobId || importing}
+                        className="w-full"
+                      >
+                        {importing ? (
+                          <>
+                            <Bot className="w-4 h-4 mr-2 animate-spin" />
+                            Processing Resumes...
+                          </>
+                        ) : (
+                          <>
+                            <Bot className="w-4 h-4 mr-2" />
+                            Process with AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {importing && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Processing resumes...</span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
+                      <Progress value={progress} className="w-full" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       ) : (

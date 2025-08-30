@@ -50,6 +50,8 @@ export default function AddCandidatePage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeAnalysis, setResumeAnalysis] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [parsedData, setParsedData] = useState<any>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -92,38 +94,84 @@ export default function AddCandidatePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF or Word document (.pdf, .doc, .docx)');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Please upload a file smaller than 10MB.');
+      return;
+    }
+
     setResumeFile(file);
     setAnalyzing(true);
+    setResumeAnalysis('');
+    setParsedData(null);
+    setUploadProgress(0);
 
-    // TODO: Implement actual file upload and AI analysis
-    // For now, simulate the process
-    setTimeout(() => {
-      setResumeAnalysis(`
-        **AI Analysis of Resume:**
-        
-        **Skills Identified:** React, TypeScript, JavaScript, Node.js, Python, AWS, Docker
-        
-        **Experience Level:** 5+ years in software development
-        
-        **Education:** Bachelor's in Computer Science
-        
-        **Key Highlights:**
-        - Led team of 4 developers at previous company
-        - Built scalable web applications serving 100k+ users
-        - Strong background in full-stack development
-        
-        **Recommended for:** Senior Frontend Developer, Full Stack Developer positions
-      `);
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
       
-      // Auto-populate candidate info based on resume analysis
-      setCandidate(prev => ({
-        ...prev,
-        name: file.name.includes('john') ? 'John Doe' : 'Candidate Name',
-        // In real implementation, this would come from AI parsing
-      }));
+      const response = await fetch('/api/ai/parse-resume', {
+        method: 'POST',
+        body: formData,
+      });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to parse resume');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setParsedData(result.data);
+        setResumeAnalysis(`
+          **AI Analysis Complete!**
+          
+          **Extracted Information:**
+          - **Name:** ${result.data.name || 'Not found'}
+          - **Email:** ${result.data.email || 'Not found'}
+          - **Phone:** ${result.data.phone || 'Not found'}
+          - **Experience:** ${result.data.experience || 'Not specified'}
+          - **Location:** ${result.data.location || 'Not specified'}
+          
+          **Skills Identified:** ${result.data.skills ? result.data.skills.join(', ') : 'None identified'}
+          
+          **Summary:** ${result.data.summary || 'No summary available'}
+          
+          **LinkedIn:** ${result.data.linkedinUrl || 'Not found'}
+        `);
+        
+        // Auto-fill form with parsed data
+        setCandidate(prev => ({
+          ...prev,
+          name: result.data.name || prev.name,
+          email: result.data.email || prev.email,
+          phone: result.data.phone || prev.phone,
+          linkedinUrl: result.data.linkedinUrl || prev.linkedinUrl,
+          notes: result.data.summary || prev.notes
+        }));
+      } else {
+        setResumeAnalysis('Resume parsing completed but no data was extracted.');
+      }
+    } catch (error) {
+      console.error('Resume analysis failed:', error);
+      setResumeAnalysis(`**Error:** ${error instanceof Error ? error.message : 'Failed to analyze resume. Please try again.'}`);
+    } finally {
       setAnalyzing(false);
-    }, 3000);
+      setUploadProgress(100);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,19 +243,47 @@ export default function AddCandidatePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="resume">Upload Resume (PDF, DOC, DOCX)</Label>
-                <div className="flex items-center gap-2">
+                <Label htmlFor="resume">Upload Resume</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                   <Input
                     id="resume"
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={handleFileUpload}
-                    className="flex-1"
+                    className="hidden"
                   />
-                  <Button type="button" variant="outline" size="sm">
-                    <Upload className="w-4 h-4" />
-                  </Button>
+                  <label htmlFor="resume" className="cursor-pointer">
+                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX (max 10MB)
+                    </p>
+                  </label>
                 </div>
+                
+                {resumeFile && (
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <FileText className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-700 flex-1">{resumeFile.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setResumeFile(null);
+                        setResumeAnalysis('');
+                        setParsedData(null);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {analyzing && (
