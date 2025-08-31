@@ -119,7 +119,7 @@ export default function EditJobPage() {
               <div className="card-body text-center py-5">
                 <i className="bi bi-exclamation-triangle text-warning" style={{ fontSize: '3rem' }}></i>
                 <h3 className="mt-3">Job Not Found</h3>
-                <p className="text-muted">The job you're trying to edit could not be found.</p>
+                <p className="text-muted">The job you&apos;re trying to edit could not be found.</p>
                 <Link href="/jobs" className="btn btn-primary">
                   <i className="bi bi-arrow-left me-2"></i>
                   Back to Jobs

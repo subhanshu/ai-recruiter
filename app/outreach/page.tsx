@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,7 @@ interface Candidate {
   job?: Job;
 }
 
-export default function OutreachPage() {
+function OutreachForm() {
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -46,7 +46,16 @@ export default function OutreachPage() {
   const [customMessage, setCustomMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [sentLinks, setSentLinks] = useState<any[]>([]);
+  const [sentLinks, setSentLinks] = useState<{
+    id: string;
+    candidateId: string;
+    jobId: string;
+    candidateName: string;
+    candidateEmail: string;
+    jobTitle: string;
+    link: string;
+    expiresAt: string;
+  }[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const candidateIdFromUrl = searchParams.get('candidateId');
@@ -101,7 +110,16 @@ export default function OutreachPage() {
     }
 
     setSending(true);
-    const newLinks = [];
+    const newLinks: {
+      id: string;
+      candidateId: string;
+      jobId: string;
+      candidateName: string;
+      candidateEmail: string;
+      jobTitle: string;
+      link: string;
+      expiresAt: string;
+    }[] = [];
 
     try {
       for (const candidateId of selectedCandidates) {
@@ -339,14 +357,14 @@ The Recruitment Team`;
                       
                       <div className="flex items-center gap-2">
                         <Input
-                          value={link.interviewUrl}
+                          value={link.link}
                           readOnly
                           className="text-xs"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => copyToClipboard(link.interviewUrl)}
+                          onClick={() => copyToClipboard(link.link)}
                         >
                           <Copy className="w-3 h-3" />
                         </Button>
@@ -360,5 +378,22 @@ The Recruitment Team`;
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function OutreachPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <OutreachForm />
+    </Suspense>
   );
 }

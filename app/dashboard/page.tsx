@@ -17,8 +17,7 @@ import {
   UserCheck,
   Clock,
   CheckCircle,
-  XCircle,
-  AlertCircle
+  XCircle
 } from 'lucide-react';
 
 interface Job {
@@ -242,7 +241,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back! Here's what's happening with your recruitment process.</p>
+          <p className="text-gray-600 mt-2">Welcome back! Here&apos;s what&apos;s happening with your recruitment process.</p>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-0">
           <Link href="/jobs/new">

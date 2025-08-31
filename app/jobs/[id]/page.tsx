@@ -209,7 +209,7 @@ export default function JobDetailPage() {
           <CardContent className="text-center py-12">
             <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Job not found</h3>
-            <p className="text-gray-500 mb-4">The job you're looking for doesn't exist or has been removed.</p>
+            <p className="text-gray-500 mb-4">The job you&apos;re looking for doesn&apos;t exist or has been removed.</p>
             <Link href="/jobs">
               <Button>Back to Jobs</Button>
             </Link>

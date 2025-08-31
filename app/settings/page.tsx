@@ -33,7 +33,7 @@ export default function SettingsPage() {
     console.log('Settings saved:', settings);
   };
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = (key: string, value: string | boolean | number) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 

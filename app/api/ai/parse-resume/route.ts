@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
 
     // Convert file to base64 for processing
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // In production, this buffer would be used for actual file processing
+    Buffer.from(bytes);
     
     // For now, we'll simulate AI parsing with mock data
     // In production, this would use OpenAI API or similar service

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,18 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { 
   User, 
-  Mail, 
-  Phone, 
   FileText, 
-  Linkedin,
   Upload,
   Save,
   X,
   Bot,
-  Plus,
   Building,
   MapPin,
   Clock
@@ -33,7 +28,7 @@ interface Job {
   location?: string;
 }
 
-export default function AddCandidatePage() {
+function AddCandidateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -50,8 +45,18 @@ export default function AddCandidatePage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeAnalysis, setResumeAnalysis] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [parsedData, setParsedData] = useState<any>(null);
+
+  const [parsedData, setParsedData] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    skills?: string[];
+    experience?: string;
+    education?: string;
+    summary?: string;
+    linkedinUrl?: string;
+    location?: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -116,7 +121,6 @@ export default function AddCandidatePage() {
     setAnalyzing(true);
     setResumeAnalysis('');
     setParsedData(null);
-    setUploadProgress(0);
 
     try {
       const formData = new FormData();
@@ -170,7 +174,6 @@ export default function AddCandidatePage() {
       setResumeAnalysis(`**Error:** ${error instanceof Error ? error.message : 'Failed to analyze resume. Please try again.'}`);
     } finally {
       setAnalyzing(false);
-      setUploadProgress(100);
     }
   };
 
@@ -458,5 +461,22 @@ export default function AddCandidatePage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function AddCandidatePage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <AddCandidateForm />
+    </Suspense>
   );
 }

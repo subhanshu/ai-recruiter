@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,8 +17,7 @@ import {
   Trash2,
   MapPin,
   Building,
-  Calendar,
-  Users
+  Calendar
 } from 'lucide-react';
 
 interface Job {
@@ -27,7 +26,12 @@ interface Job {
   department?: string;
   location?: string;
   createdAt: string;
-  candidates?: any[];
+  candidates?: {
+    id: string;
+    name: string;
+    email: string;
+    status: string;
+  }[];
 }
 
 export default function JobsPage() {
@@ -172,12 +176,12 @@ export default function JobsPage() {
   };
 
   const getUniqueDepartments = () => {
-    const departments = jobs.map(job => job.department).filter(Boolean);
+    const departments = jobs.map(job => job.department).filter((dept): dept is string => Boolean(dept));
     return [...new Set(departments)];
   };
 
   const getUniqueLocations = () => {
-    const locations = jobs.map(job => job.location).filter(Boolean);
+    const locations = jobs.map(job => job.location).filter((loc): loc is string => Boolean(loc));
     return [...new Set(locations)];
   };
 
