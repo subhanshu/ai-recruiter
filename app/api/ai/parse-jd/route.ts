@@ -21,8 +21,19 @@ export async function POST(req: Request) {
   if (!jd) return NextResponse.json({ error: "jd is required" }, { status: 400 });
 
   // Simple prompt to structure JD and generate questions
-  const prompt = `You are an assistant that structures job descriptions and generates screening questions.
-Return strict JSON with fields: title, department, location, responsibilities, requiredSkills, qualifications, questions (array of 8-10 concise questions). If a field is missing, omit it.
+  const prompt = `You are an assistant that structures job descriptions and generates basic screening questions for recruiters.
+
+Generate 8-10 basic screening questions that a recruiter would ask to assess:
+- Basic qualifications and experience
+- Interest in the role and company
+- Availability and location preferences
+- Salary expectations
+- General fit for the position
+
+These should be initial screening questions, NOT deep technical or behavioral questions that would be asked by hiring managers in later rounds.
+
+Return strict JSON with fields: title, department, location, responsibilities, requiredSkills, qualifications, questions (array of 8-10 concise screening questions). If a field is missing, omit it.
+
 JD:\n${jd}`;
 
   const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -47,11 +58,14 @@ JD:\n${jd}`;
     // If OpenAI quota exceeded, provide fallback response
     if (text.includes('quota') || text.includes('insufficient_quota')) {
       const mockQuestions = [
-        "Can you tell us about your experience with the technologies mentioned in this role?",
-        "What interests you most about this position?",
-        "Describe a challenging project you've worked on recently.",
-        "How do you approach problem-solving in your work?",
-        "What are your career goals and how does this role align with them?"
+        "Can you tell me about your relevant experience for this role?",
+        "What interests you most about this position and our company?",
+        "What is your current salary expectation for this role?",
+        "Are you available to start immediately or do you have a notice period?",
+        "Are you comfortable with the location and any travel requirements?",
+        "What is your preferred work arrangement (remote, hybrid, or on-site)?",
+        "Do you have any questions about the role or company?",
+        "What are your career goals for the next 2-3 years?"
       ];
       
       return NextResponse.json({

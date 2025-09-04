@@ -22,6 +22,7 @@ import {
   Phone,
   Mail,
   Clock,
+  Bot,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -425,10 +426,45 @@ export default function JobDetailPage() {
                   <CardTitle>Interview Questions</CardTitle>
                   <CardDescription>Questions that candidates will answer during their interview</CardDescription>
                 </div>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Question
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/ai/generate-questions', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            jobDescription: job.jdRaw || job.responsibilities || '',
+                            jobTitle: job.title
+                          })
+                        });
+                        
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (data.questions && Array.isArray(data.questions)) {
+                            // Here you would typically update the job with new questions
+                            // For now, we'll show an alert with the generated questions
+                            alert(`Generated ${data.questions.length} questions:\n\n${data.questions.join('\n')}`);
+                          }
+                        } else {
+                          alert('Failed to generate questions. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('Error generating questions:', error);
+                        alert('Error generating questions. Please try again.');
+                      }
+                    }}
+                  >
+                    <Bot className="w-4 h-4 mr-2" />
+                    AI: Generate Questions
+                  </Button>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Question
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

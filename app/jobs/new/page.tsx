@@ -111,7 +111,7 @@ export default function NewJobPage() {
                     ) : (
                       <>
                         <i className="bi bi-magic me-2"></i>
-                        AI: Parse & Generate Questions
+                        AI: Parse & Generate Screening Questions
                       </>
                     )}
                   </button>

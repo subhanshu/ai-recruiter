@@ -212,7 +212,7 @@ export default function EditJobPage() {
                     ) : (
                       <>
                         <i className="bi bi-magic me-2"></i>
-                        AI: Re-analyze & Update Questions
+                        AI: Generate Screening Questions
                       </>
                     )}
                   </button>
