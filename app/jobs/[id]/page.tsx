@@ -24,7 +24,9 @@ import {
   Clock,
   Bot,
   CheckCircle,
-  XCircle
+  XCircle,
+  Save,
+  X
 } from 'lucide-react';
 
 interface Job {
@@ -66,6 +68,8 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchJobDetails();
@@ -430,7 +434,9 @@ export default function JobDetailPage() {
                   <Button 
                     size="sm" 
                     variant="outline"
+                    disabled={generatingQuestions}
                     onClick={async () => {
+                      setGeneratingQuestions(true);
                       try {
                         const response = await fetch('/api/ai/generate-questions', {
                           method: 'POST',
@@ -444,9 +450,9 @@ export default function JobDetailPage() {
                         if (response.ok) {
                           const data = await response.json();
                           if (data.questions && Array.isArray(data.questions)) {
-                            // Here you would typically update the job with new questions
-                            // For now, we'll show an alert with the generated questions
-                            alert(`Generated ${data.questions.length} questions:\n\n${data.questions.join('\n')}`);
+                            setGeneratedQuestions(data.questions);
+                            // Switch to questions tab to show the generated questions
+                            setActiveTab('questions');
                           }
                         } else {
                           alert('Failed to generate questions. Please try again.');
@@ -454,11 +460,22 @@ export default function JobDetailPage() {
                       } catch (error) {
                         console.error('Error generating questions:', error);
                         alert('Error generating questions. Please try again.');
+                      } finally {
+                        setGeneratingQuestions(false);
                       }
                     }}
                   >
-                    <Bot className="w-4 h-4 mr-2" />
-                    AI: Generate Questions
+                    {generatingQuestions ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Bot className="w-4 h-4 mr-2" />
+                        AI: Generate Questions
+                      </>
+                    )}
                   </Button>
                   <Button size="sm">
                     <Plus className="w-4 h-4 mr-2" />
@@ -468,14 +485,80 @@ export default function JobDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {!job.questions || job.questions.length === 0 ? (
+              {/* Show generated questions if they exist */}
+              {generatedQuestions.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-medium text-gray-900">Generated Questions</h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={async () => {
+                          // Save generated questions to the job
+                          try {
+                            const response = await fetch(`/api/jobs/${jobId}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                questions: generatedQuestions.map((text, index) => ({
+                                  text,
+                                  order: index + 1
+                                }))
+                              })
+                            });
+                            
+                            if (response.ok) {
+                              // Refresh job data
+                              await fetchJobDetails();
+                              setGeneratedQuestions([]);
+                              alert('Questions saved successfully!');
+                            } else {
+                              alert('Failed to save questions. Please try again.');
+                            }
+                          } catch (error) {
+                            console.error('Error saving questions:', error);
+                            alert('Error saving questions. Please try again.');
+                          }
+                        }}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Questions
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setGeneratedQuestions([])}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Discard
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {generatedQuestions.map((question, index) => (
+                      <div key={index} className="flex items-start gap-4 p-4 border rounded-lg bg-blue-50">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-gray-900">{question}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Show existing questions */}
+              {(!job.questions || job.questions.length === 0) && generatedQuestions.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>No questions set for this job</p>
                   <p className="text-sm">Add questions to create a structured interview process</p>
                 </div>
-              ) : (
+              ) : job.questions && job.questions.length > 0 ? (
                 <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900">Current Questions</h4>
                   {job.questions
                     .sort((a, b) => a.order - b.order)
                     .map((question, index) => (
@@ -497,7 +580,7 @@ export default function JobDetailPage() {
                       </div>
                     ))}
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
