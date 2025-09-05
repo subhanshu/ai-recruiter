@@ -22,7 +22,12 @@ import {
   CheckCircle,
   XCircle,
   Plus,
-  Upload
+  Upload,
+  Video,
+  BarChart3,
+  Kanban,
+  TrendingUp,
+  Star
 } from 'lucide-react';
 
 interface Candidate {
@@ -45,6 +50,8 @@ export default function CandidatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [jobFilter, setJobFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+  const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCandidates();
@@ -52,7 +59,7 @@ export default function CandidatesPage() {
 
   useEffect(() => {
     filterCandidates();
-  }, [candidates, searchTerm, statusFilter, jobFilter]);
+  }, [candidates, searchTerm, statusFilter, jobFilter, sortBy]);
 
   const fetchCandidates = async () => {
     try {
@@ -186,6 +193,23 @@ export default function CandidatesPage() {
       filtered = filtered.filter(candidate => candidate.job?.id === jobFilter);
     }
 
+    // Sort candidates
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'email':
+          return a.email.localeCompare(b.email);
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'job':
+          return (a.job?.title || '').localeCompare(b.job?.title || '');
+        case 'date':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
     setFilteredCandidates(filtered);
   };
 
@@ -204,7 +228,47 @@ export default function CandidatesPage() {
     return jobs;
   };
 
-  const getStatusBadge = (status: string) => {
+  const generateInterviewLink = async (candidateId: string, jobId: string) => {
+    try {
+      setGeneratingLinks(prev => new Set(prev).add(candidateId));
+      const response = await fetch('/api/outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          jobId,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+        })
+      });
+      
+      if (response.ok) {
+        const newLink = await response.json();
+        // Copy link to clipboard
+        navigator.clipboard.writeText(newLink.interviewUrl);
+        // You could add a toast notification here
+        alert('Interview link generated and copied to clipboard!');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to generate interview link:', errorData);
+        alert(`Failed to generate interview link: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error generating interview link:', error);
+      alert(`Error generating interview link: ${error}`);
+    } finally {
+      setGeneratingLinks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(candidateId);
+        return newSet;
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string | undefined | null) => {
+    if (!status) {
+      return <Badge variant="outline">Unknown</Badge>;
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
@@ -251,11 +315,23 @@ export default function CandidatesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Candidates</h1>
           <p className="text-gray-600 mt-2">Manage all candidate applications and track their progress</p>
         </div>
-        <div className="flex gap-3 mt-4 sm:mt-0">
+        <div className="flex flex-wrap gap-3 mt-4 sm:mt-0">
           <Link href="/candidates/new">
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Add Candidate
+            </Button>
+          </Link>
+          <Link href="/candidates/kanban">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Kanban className="w-4 h-4" />
+              Kanban View
+            </Button>
+          </Link>
+          <Link href="/interviews">
+            <Button variant="outline" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Interview Results
             </Button>
           </Link>
           <Link href="/candidates/bulk">
@@ -282,7 +358,7 @@ export default function CandidatesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -318,6 +394,19 @@ export default function CandidatesPage() {
                     {job?.title}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date Added</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="job">Job Position</SelectItem>
               </SelectContent>
             </Select>
 
@@ -387,6 +476,17 @@ export default function CandidatesPage() {
                         View
                       </Button>
                     </Link>
+                    {candidate.job && (
+                      <Button
+                        size="sm"
+                        onClick={() => generateInterviewLink(candidate.id, candidate.job!.id)}
+                        disabled={generatingLinks.has(candidate.id)}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        <Video className="w-4 h-4 mr-2" />
+                        {generatingLinks.has(candidate.id) ? 'Generating...' : 'AI Interview'}
+                      </Button>
+                    )}
                     <Link href={`/outreach?candidateId=${candidate.id}`}>
                       <Button variant="outline" size="sm">
                         <MessageSquare className="w-4 h-4 mr-2" />

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/db";
 import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 
 export async function GET(
   request: Request,
@@ -46,9 +47,11 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, department, location, responsibilities, requiredSkills, qualifications, jdRaw } = body;
+    const { title, department, location, responsibilities, requiredSkills, qualifications, jdRaw, questions } = body;
     
     const supabaseClient = await createClient(cookies());
+    
+    // Update the job
     const { data: job, error } = await supabaseClient
       .from('Job')
       .update({
@@ -69,7 +72,47 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    return NextResponse.json(job);
+    // Handle questions if provided
+    if (questions && Array.isArray(questions)) {
+      // Delete existing questions for this job
+      await supabaseClient.from('Question').delete().eq('jobId', id);
+      
+      // Insert new questions
+      if (questions.length > 0) {
+        const questionsToInsert = questions.map((question: string | { text: string }, index: number) => ({
+          id: randomUUID(), // Generate UUID for each question
+          jobId: id,
+          text: typeof question === 'string' ? question : question.text,
+          order: index + 1
+        }));
+        
+        const { error: questionsError } = await supabaseClient
+          .from('Question')
+          .insert(questionsToInsert);
+        
+        if (questionsError) {
+          console.error('Error inserting questions:', questionsError);
+          // Don't fail the entire request if questions fail
+        }
+      }
+    }
+    
+    // Fetch the updated job with questions
+    const { data: updatedJob, error: fetchError } = await supabaseClient
+      .from('Job')
+      .select(`
+        *,
+        questions:Question(*),
+        candidates:Candidate(*)
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+    
+    return NextResponse.json(updatedJob);
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to update job' },

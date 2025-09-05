@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/db";
 import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 
 export async function GET() {
   try {
@@ -57,8 +58,9 @@ export async function POST(req: Request) {
     // If questions are provided, insert them
     if (questions && questions.length > 0) {
       const questionsToInsert = questions.map((text: string, index: number) => ({
+        id: randomUUID(), // Generate UUID for each question
         text,
-        order: index,
+        order: index + 1, // Fix: order should start from 1, not 0
         jobId: job.id
       }));
       

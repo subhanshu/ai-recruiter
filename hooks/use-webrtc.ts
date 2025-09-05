@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Conversation } from "@/lib/conversations";
-import { useTranslations } from "@/components/translations-context";
+// Removed translations dependency - using English only
 
 export interface Tool {
   name: string;
@@ -34,8 +34,8 @@ interface UseWebRTCAudioSessionReturn {
 export default function useWebRTCAudioSession(
   voice: string,
   tools?: Tool[],
+  instructions?: string,
 ): UseWebRTCAudioSessionReturn {
-  const { t, locale } = useTranslations();
   // Connection/session states
   const [status, setStatus] = useState("");
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -59,6 +59,17 @@ export default function useWebRTCAudioSession(
   // For function calls (AI "tools")
   const functionRegistry = useRef<Record<string, Function>>({});
 
+  const registerFunction = useCallback((name: string, fn: Function) => {
+    // Only log if it's a new function or if we're in development
+    if (!functionRegistry.current[name] || process.env.NODE_ENV === 'development') {
+      console.log('🔧 Registering function:', name);
+    }
+    functionRegistry.current[name] = fn;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📋 Available functions:', Object.keys(functionRegistry.current));
+    }
+  }, []);
+
   // Volume analysis (assistant inbound audio)
   const [currentVolume, setCurrentVolume] = useState(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -69,13 +80,6 @@ export default function useWebRTCAudioSession(
    * While user is speaking, we update that conversation item by ID.
    */
   const ephemeralUserMessageIdRef = useRef<string | null>(null);
-
-  /**
-   * Register a function (tool) so the AI can call it.
-   */
-  function registerFunction(name: string, fn: Function) {
-    functionRegistry.current[name] = fn;
-  }
 
   /**
    * Configure the data channel on open, sending a session update to the server.
@@ -94,24 +98,23 @@ export default function useWebRTCAudioSession(
     };
     dataChannel.send(JSON.stringify(sessionUpdate));
 
-    console.log("Session update sent:", sessionUpdate);
-    console.log("Setting locale: " + t("language") + " : " + locale);
-
-    // Send language preference message
-    const languageMessage = {
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: t("languagePrompt"),
-          },
-        ],
-      },
-    };
-    dataChannel.send(JSON.stringify(languageMessage));
+    // Send initial context message if we have custom instructions
+    if (instructions) {
+      const contextMessage = {
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: "Remember your role and context as defined in the system instructions.",
+            },
+          ],
+        },
+      };
+      dataChannel.send(JSON.stringify(contextMessage));
+    }
   }
 
   /**
@@ -169,7 +172,11 @@ export default function useWebRTCAudioSession(
   async function handleDataChannelMessage(event: MessageEvent) {
     try {
       const msg = JSON.parse(event.data);
-      // console.log("Incoming dataChannel message:", msg);
+      
+      // Log specific message types we care about for debugging if needed
+      // if (msg.type.includes('audio') || msg.type.includes('response') || msg.type.includes('function')) {
+      //   console.log("🔊 Audio/Response message:", msg.type, msg);
+      // }
 
       switch (msg.type) {
         /**
@@ -276,26 +283,46 @@ export default function useWebRTCAudioSession(
          * AI calls a function (tool)
          */
         case "response.function_call_arguments.done": {
+          console.log('🔧 AI calling function:', msg.name, 'with args:', msg.arguments);
           const fn = functionRegistry.current[msg.name];
           if (fn) {
-            const args = JSON.parse(msg.arguments);
-            const result = await fn(args);
+            try {
+              const args = JSON.parse(msg.arguments);
+              console.log('📞 Executing function:', msg.name, 'with parsed args:', args);
+              const result = await fn(args);
+              console.log('✅ Function result:', result);
 
-            // Respond with function output
-            const response = {
-              type: "conversation.item.create",
-              item: {
-                type: "function_call_output",
-                call_id: msg.call_id,
-                output: JSON.stringify(result),
-              },
-            };
-            dataChannelRef.current?.send(JSON.stringify(response));
+              // Respond with function output
+              const response = {
+                type: "conversation.item.create",
+                item: {
+                  type: "function_call_output",
+                  call_id: msg.call_id,
+                  output: JSON.stringify(result),
+                },
+              };
+              dataChannelRef.current?.send(JSON.stringify(response));
 
-            const responseCreate = {
-              type: "response.create",
-            };
-            dataChannelRef.current?.send(JSON.stringify(responseCreate));
+              const responseCreate = {
+                type: "response.create",
+              };
+              dataChannelRef.current?.send(JSON.stringify(responseCreate));
+            } catch (error) {
+              console.error('❌ Function execution error:', error);
+              // Send error response
+              const errorResponse = {
+                type: "conversation.item.create",
+                item: {
+                  type: "function_call_output",
+                  call_id: msg.call_id,
+                  output: JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
+                },
+              };
+              dataChannelRef.current?.send(JSON.stringify(errorResponse));
+            }
+          } else {
+            console.error("❌ Function not found:", msg.name);
+            console.log("Available functions:", Object.keys(functionRegistry.current));
           }
           break;
         }
@@ -322,7 +349,12 @@ export default function useWebRTCAudioSession(
       const response = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          voice,
+          instructions: instructions || undefined
+        }),
       });
+      console.log("🤖 Sending instructions to session:", instructions ? "Custom instructions" : "Default instructions");
       if (!response.ok) {
         throw new Error(`Failed to get ephemeral token: ${response.status}`);
       }
@@ -399,10 +431,18 @@ export default function useWebRTCAudioSession(
       // Hidden <audio> element for inbound assistant TTS
       const audioEl = document.createElement("audio");
       audioEl.autoplay = true;
+      audioEl.controls = false;
+      audioEl.style.display = "none";
+      document.body.appendChild(audioEl);
 
       // Inbound track => assistant's TTS
       pc.ontrack = (event) => {
         audioEl.srcObject = event.streams[0];
+
+        // Try to play the audio (required for autoplay policy)
+        audioEl.play().catch(err => {
+          console.error("Audio autoplay blocked, will play on user interaction:", err);
+        });
 
         // Optional: measure inbound volume
         const audioCtx = new (window.AudioContext || window.AudioContext)();
@@ -423,7 +463,6 @@ export default function useWebRTCAudioSession(
       dataChannelRef.current = dataChannel;
 
       dataChannel.onopen = () => {
-        // console.log("Data channel open");
         configureDataChannel(dataChannel);
       };
       dataChannel.onmessage = handleDataChannelMessage;
@@ -505,6 +544,10 @@ export default function useWebRTCAudioSession(
     if (isSessionActive) {
       stopSession();
     } else {
+      // Resume audio context if suspended (required for autoplay policy)
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
       startSession();
     }
   }

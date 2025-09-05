@@ -33,7 +33,7 @@ interface Candidate {
   id: string;
   name: string;
   email: string;
-  status: string;
+  status?: string;
   createdAt: string;
 }
 
@@ -102,7 +102,12 @@ export default function Dashboard() {
 
       if (candidatesResponse.ok) {
         const candidatesData = await candidatesResponse.json();
-        setCandidates(candidatesData.slice(0, 5));
+        // Add default status for candidates that don't have one
+        const candidatesWithStatus = candidatesData.map((candidate: { status?: string; [key: string]: unknown }) => ({
+          ...candidate,
+          status: candidate.status || 'pending'
+        }));
+        setCandidates(candidatesWithStatus.slice(0, 5));
         setStats(prev => ({ ...prev, totalCandidates: candidatesData.length }));
       } else {
         // Fallback to mock data if API fails
@@ -194,7 +199,11 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined | null) => {
+    if (!status) {
+      return <Badge variant="outline">Unknown</Badge>;
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;

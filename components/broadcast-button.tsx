@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useTranslations } from "@/components/translations-context";
 
 interface BroadcastButtonProps {
   isSessionActive: boolean
@@ -8,7 +7,6 @@ interface BroadcastButtonProps {
 }
 
 export function BroadcastButton({ isSessionActive, onClick }: BroadcastButtonProps) {
-  const { t } = useTranslations();
   return (
     <Button
       variant={isSessionActive ? "destructive" : "default"}
@@ -17,10 +15,10 @@ export function BroadcastButton({ isSessionActive, onClick }: BroadcastButtonPro
     >
       {isSessionActive && (
         <Badge variant="secondary" className="animate-pulse bg-red-100 text-red-700">
-          {t('broadcast.live')}
+          Live
         </Badge>
       )}
-      {isSessionActive ? t('broadcast.end') : t('broadcast.start')}
+      {isSessionActive ? "End Interview" : "Start Interview"}
     </Button>
   )
 } 

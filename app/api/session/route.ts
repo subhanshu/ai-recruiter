@@ -6,7 +6,13 @@ export async function POST(req: Request) {
       throw new Error("OPENAI_API_KEY is not set");
     }
 
-    const { voice = "alloy", instructions } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { voice = "alloy", instructions } = body;
+    
+    console.log("🎯 Session API received instructions:", instructions ? "Custom instructions provided" : "Using default instructions");
+    if (instructions) {
+      console.log("📋 Instructions preview:", instructions.substring(0, 100) + "...");
+    }
 
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
@@ -15,12 +21,12 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
+        model: "gpt-4o-mini-realtime-preview",
         voice,
         modalities: ["audio", "text"],
         instructions:
           instructions ||
-          "You are an AI interviewer for a recruiting platform. Greet the candidate, then proceed with screening questions. Keep answers concise and friendly.",
+          "You are an AI interviewer for a recruiting platform. Your role is to conduct a professional interview with the candidate. Start by calling the startInterview function to begin the session, then ask relevant questions using the askQuestion function. After each answer, use evaluateAnswer to assess the response. Take notes during the interview using takeNotes. When finished, call endInterview with a summary and score. Be conversational, professional, and engaging. Keep questions relevant to the job position.",
         tool_choice: "auto",
       }),
     });

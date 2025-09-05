@@ -26,7 +26,8 @@ import {
   CheckCircle,
   XCircle,
   Save,
-  X
+  X,
+  BarChart3
 } from 'lucide-react';
 
 interface Job {
@@ -175,7 +176,11 @@ export default function JobDetailPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined | null) => {
+    if (!status) {
+      return <Badge variant="outline">Unknown</Badge>;
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
@@ -263,6 +268,12 @@ export default function JobDetailPage() {
               Add Candidate
             </Button>
           </Link>
+          <Link href={`/interviews?jobId=${jobId}`}>
+            <Button variant="outline">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Interview Results
+            </Button>
+          </Link>
           <Link href={`/jobs/${jobId}/edit`}>
             <Button variant="outline">
               <Edit className="w-4 h-4 mr-2" />
@@ -280,10 +291,11 @@ export default function JobDetailPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="candidates">Candidates ({job.candidates?.length || 0})</TabsTrigger>
           <TabsTrigger value="questions">Questions ({job.questions?.length || 0})</TabsTrigger>
+          <TabsTrigger value="interviews">Interviews</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -500,10 +512,9 @@ export default function JobDetailPage() {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
-                                questions: generatedQuestions.map((text, index) => ({
-                                  text,
-                                  order: index + 1
-                                }))
+                                title: job.title,
+                                jdRaw: job.jdRaw,
+                                questions: generatedQuestions
                               })
                             });
                             
@@ -513,6 +524,8 @@ export default function JobDetailPage() {
                               setGeneratedQuestions([]);
                               alert('Questions saved successfully!');
                             } else {
+                              const errorData = await response.json();
+                              console.error('Save error:', errorData);
                               alert('Failed to save questions. Please try again.');
                             }
                           } catch (error) {
@@ -581,6 +594,39 @@ export default function JobDetailPage() {
                     ))}
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Interviews Tab */}
+        <TabsContent value="interviews" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Interview Results</CardTitle>
+                  <CardDescription>View interview results and analysis for candidates of this job</CardDescription>
+                </div>
+                <Link href={`/interviews?jobId=${jobId}`}>
+                  <Button>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View All Results
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium mb-2">Interview Results</p>
+                <p className="text-sm mb-4">View detailed interview analysis and candidate scores</p>
+                <Link href={`/interviews?jobId=${jobId}`}>
+                  <Button>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Interview Results
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -23,7 +23,10 @@ import {
   XCircle,
   UserCheck,
   ExternalLink,
-  Briefcase
+  Briefcase,
+  Video,
+  Copy,
+  Send
 } from 'lucide-react';
 
 interface Candidate {
@@ -55,6 +58,17 @@ interface Interview {
   score?: number;
 }
 
+interface InterviewLink {
+  id: string;
+  token: string;
+  candidateId: string;
+  jobId: string;
+  expiresAt: string;
+  status: string;
+  interviewUrl: string;
+  createdAt: string;
+}
+
 export default function CandidateDetailPage() {
   const params = useParams();
   const candidateId = params.id as string;
@@ -62,9 +76,13 @@ export default function CandidateDetailPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [interviewLinks, setInterviewLinks] = useState<InterviewLink[]>([]);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [showInterviewLink, setShowInterviewLink] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCandidateDetails();
+    fetchInterviewLinks();
   }, [candidateId]);
 
   const fetchCandidateDetails = async () => {
@@ -143,7 +161,60 @@ export default function CandidateDetailPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const fetchInterviewLinks = async () => {
+    try {
+      const response = await fetch(`/api/outreach?candidateId=${candidateId}`);
+      if (response.ok) {
+        const links = await response.json();
+        setInterviewLinks(links);
+      }
+    } catch (error) {
+      console.error('Error fetching interview links:', error);
+    }
+  };
+
+  const generateInterviewLink = async () => {
+    if (!candidate?.job) return;
+    
+    try {
+      setIsGeneratingLink(true);
+      const response = await fetch('/api/outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId: candidate.id,
+          jobId: candidate.job.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+        })
+      });
+      
+      if (response.ok) {
+        const newLink = await response.json();
+        setInterviewLinks(prev => [newLink, ...prev]);
+        setShowInterviewLink(newLink.interviewUrl);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to generate interview link:', errorData);
+        alert(`Failed to generate interview link: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error generating interview link:', error);
+      alert(`Error generating interview link: ${error}`);
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyInterviewLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    // You could add a toast notification here
+  };
+
+  const getStatusBadge = (status: string | undefined | null) => {
+    if (!status) {
+      return <Badge variant="outline">Unknown</Badge>;
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
@@ -230,8 +301,22 @@ export default function CandidateDetailPage() {
           </div>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-0">
+          <Button 
+            onClick={generateInterviewLink}
+            disabled={isGeneratingLink || !candidate?.job}
+            className={!candidate?.job ? "opacity-50 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"}
+            title={!candidate?.job ? 'No job associated with this candidate' : 'Generate AI interview link'}
+          >
+            <Video className="w-4 h-4 mr-2" />
+            {isGeneratingLink ? 'Generating...' : 'Generate AI Interview'}
+          </Button>
+          {!candidate?.job && (
+            <span className="text-sm text-gray-500 flex items-center">
+              ⚠️ No job associated
+            </span>
+          )}
           <Link href={`/outreach?candidateId=${candidateId}`}>
-            <Button>
+            <Button variant="outline">
               <MessageSquare className="w-4 h-4 mr-2" />
               Send Outreach
             </Button>
@@ -241,9 +326,10 @@ export default function CandidateDetailPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="application">Application</TabsTrigger>
+          <TabsTrigger value="interview-links">Interview Links ({interviewLinks.length})</TabsTrigger>
           <TabsTrigger value="interviews">Interviews ({candidate.interviews?.length || 0})</TabsTrigger>
         </TabsList>
 
@@ -391,6 +477,121 @@ export default function CandidateDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Interview Links Tab */}
+        <TabsContent value="interview-links" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>AI Interview Links</CardTitle>
+                  <CardDescription>Generate and manage AI interview links for this candidate</CardDescription>
+                </div>
+                <Button 
+                  onClick={generateInterviewLink}
+                  disabled={isGeneratingLink || !candidate?.job}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  title={!candidate?.job ? 'No job associated with this candidate' : 'Generate AI interview link'}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  {isGeneratingLink ? 'Generating...' : 'Generate New Link'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {showInterviewLink && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2">New Interview Link Generated!</h4>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={showInterviewLink}
+                      readOnly
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => copyInterviewLink(showInterviewLink)}
+                      variant="outline"
+                    >
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copy
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(showInterviewLink, '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Open
+                    </Button>
+                  </div>
+                  <p className="text-sm text-green-600 mt-2">
+                    Share this link with the candidate to start their AI interview.
+                  </p>
+                </div>
+              )}
+
+              {interviewLinks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Video className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No interview links generated yet</p>
+                  <p className="text-sm">Generate a link to start an AI interview with this candidate</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {interviewLinks.map((link) => (
+                    <div key={link.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            Interview Link
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            Created {formatDate(link.createdAt)}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Expires {formatDate(link.expiresAt)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={link.status === 'active' ? 'default' : 'secondary'}>
+                            {link.status || 'active'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={link.interviewUrl}
+                          readOnly
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => copyInterviewLink(link.interviewUrl)}
+                          variant="outline"
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => window.open(link.interviewUrl, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          Open
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Interviews Tab */}

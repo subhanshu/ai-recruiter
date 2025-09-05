@@ -40,7 +40,7 @@ Return only a JSON array of questions, like this:
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [
           { role: 'system', content: 'Return only valid JSON array. No commentary or explanation.' },
           { role: 'user', content: prompt }

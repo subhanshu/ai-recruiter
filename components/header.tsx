@@ -24,8 +24,17 @@ export function Header() {
           <Link href="/dashboard" className="text-sm hover:underline">
             Dashboard
           </Link>
-          <Link href="/jobs/new" className="text-sm hover:underline">
-            New Job
+          <Link href="/candidates" className="text-sm hover:underline">
+            Candidates
+          </Link>
+          <Link href="/candidates/kanban" className="text-sm hover:underline">
+            Pipeline
+          </Link>
+          <Link href="/interviews" className="text-sm hover:underline">
+            Interviews
+          </Link>
+          <Link href="/jobs" className="text-sm hover:underline">
+            Jobs
           </Link>
         </motion.nav>
         <motion.div 

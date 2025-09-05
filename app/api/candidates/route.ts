@@ -1,15 +1,16 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/db";
-import { cookies } from "next/headers";
+import { supabaseClient } from "@/lib/supabase-client";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const jobId = searchParams.get('jobId');
 
   try {
-    const supabaseClient = await createClient(cookies());
-    let query = supabaseClient.from('Candidate').select('*');
+    let query = supabaseClient.from('Candidate').select(`
+      *,
+      job:Job(*)
+    `);
     
     if (jobId) {
       query = query.eq('jobId', jobId);
@@ -35,7 +36,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, email, phone, resumeUrl, jobId } = body;
     
-    const supabaseClient = await createClient(cookies());
     const { data: candidate, error } = await supabaseClient
       .from('Candidate')
       .insert([

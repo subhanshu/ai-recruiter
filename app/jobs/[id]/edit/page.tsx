@@ -81,7 +81,10 @@ export default function EditJobPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, jdRaw: jd, questions }),
       });
-      if (!res.ok) throw new Error("Failed to update job");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update job");
+      }
       router.push(`/jobs/${jobId}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error";

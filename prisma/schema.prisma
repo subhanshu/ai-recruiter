@@ -70,6 +70,20 @@ model Interview {
   transcript   String?
   summary      String?
   score        Float?
+  evaluations  InterviewEvaluation[]
+}
+
+model InterviewEvaluation {
+  id                String   @id @default(cuid())
+  interviewId       String
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  evaluations       Json     // Array of question evaluations
+  overallScore      Float
+  overallEvaluation String
+  strengths         String[] // Array of strengths
+  improvements      String[] // Array of improvements
+  recommendation    String
+  createdAt         DateTime @default(now())
 }
 
 model OutreachLink {
@@ -81,6 +95,7 @@ model OutreachLink {
   job          Job       @relation(fields: [jobId], references: [id])
   expiresAt    DateTime
   usedAt       DateTime?
+  status       String   @default("active")
   createdAt    DateTime @default(now())
 }
 

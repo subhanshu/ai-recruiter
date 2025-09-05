@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -41,6 +42,9 @@ export function MobileNav() {
                 </Badge>
               </Link>
             </DialogTitle>
+            <DialogDescription>
+              Navigate through the application and access all available features.
+            </DialogDescription>
           </DialogHeader>
           <h1 className="mt-6 text-xl font-bold">{t('header.title')}</h1>
           <p className="mt-2 text-muted-foreground text-start text-lg">

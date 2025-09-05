@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/db";
-import { cookies } from "next/headers";
+import { supabaseClient } from "@/lib/supabase-client";
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
@@ -16,26 +15,27 @@ export async function POST(req: Request) {
       );
     }
     
-    // Generate a secure token
+    // Generate a secure token and ID
     const token = uuidv4();
+    const linkId = uuidv4();
     
     // Create outreach link
-    const supabaseClient = await createClient(cookies());
     const { data: outreachLink, error } = await supabaseClient
       .from('OutreachLink')
       .insert([
         {
+          id: linkId,
           token,
           candidateId,
           jobId,
-          expiresAt: expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days default
-          status: 'active'
+          expiresAt: expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days default
         }
       ])
       .select()
       .single();
     
     if (error) {
+      console.error('Outreach API - Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
@@ -54,4 +54,40 @@ export async function POST(req: Request) {
   }
 }
 
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const candidateId = searchParams.get('candidateId');
+  const jobId = searchParams.get('jobId');
 
+  try {
+    let query = supabaseClient.from('OutreachLink').select('*');
+    
+    if (candidateId) {
+      query = query.eq('candidateId', candidateId);
+    }
+    
+    if (jobId) {
+      query = query.eq('jobId', jobId);
+    }
+    
+    const { data: links, error } = await query.order('createdAt', { ascending: false });
+    
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Add interview URLs to the response
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const linksWithUrls = links?.map(link => ({
+      ...link,
+      interviewUrl: `${baseUrl}/interview/${link.token}`
+    })) || [];
+    
+    return NextResponse.json(linksWithUrls);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to fetch outreach links' },
+      { status: 500 }
+    );
+  }
+}

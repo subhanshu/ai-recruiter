@@ -58,6 +58,19 @@ CREATE TABLE IF NOT EXISTS "Interview" (
   score DOUBLE PRECISION
 );
 
+-- Create InterviewEvaluation table
+CREATE TABLE IF NOT EXISTS "InterviewEvaluation" (
+  id TEXT PRIMARY KEY,
+  "interviewId" TEXT NOT NULL REFERENCES "Interview"(id) ON DELETE CASCADE,
+  evaluations JSONB NOT NULL,
+  "overallScore" DOUBLE PRECISION NOT NULL,
+  "overallEvaluation" TEXT NOT NULL,
+  strengths TEXT[] DEFAULT '{}',
+  improvements TEXT[] DEFAULT '{}',
+  recommendation TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create OutreachLink table
 CREATE TABLE IF NOT EXISTS "OutreachLink" (
   id TEXT PRIMARY KEY,
@@ -75,6 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_question_job ON "Question"("jobId");
 CREATE INDEX IF NOT EXISTS idx_candidate_job ON "Candidate"("jobId");
 CREATE INDEX IF NOT EXISTS idx_interview_candidate ON "Interview"("candidateId");
 CREATE INDEX IF NOT EXISTS idx_interview_job ON "Interview"("jobId");
+CREATE INDEX IF NOT EXISTS idx_interview_evaluation_interview ON "InterviewEvaluation"("interviewId");
 CREATE INDEX IF NOT EXISTS idx_outreach_token ON "OutreachLink"(token);
 CREATE INDEX IF NOT EXISTS idx_outreach_candidate ON "OutreachLink"("candidateId");
 CREATE INDEX IF NOT EXISTS idx_outreach_job ON "OutreachLink"("jobId");

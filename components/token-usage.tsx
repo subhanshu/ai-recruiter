@@ -1,7 +1,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { useTranslations } from "@/components/translations-context"
 import { Message } from "@/types"
 
 interface TokenUsageDisplayProps {
@@ -9,14 +8,13 @@ interface TokenUsageDisplayProps {
 }
 
 export function TokenUsageDisplay({ messages }: TokenUsageDisplayProps) {
-  const { t } = useTranslations();
   return (
     <>
     { messages.length > 0 && (
     <Accordion type="single" collapsible key="token-usage" className="w-full">
       <AccordionItem value="token-usage">
         <AccordionTrigger>
-          <CardTitle className="text-sm font-medium">{t('tokenUsage.usage')}</CardTitle>
+          <CardTitle className="text-sm font-medium">Token Usage</CardTitle>
         </AccordionTrigger>
         <AccordionContent>
           <Card>
@@ -27,9 +25,9 @@ export function TokenUsageDisplay({ messages }: TokenUsageDisplayProps) {
                   .slice(-1)
                   .map((msg) => {
                     const tokenData = [
-                      { label: t('tokenUsage.total'), value: msg.response?.usage?.total_tokens },
-                      { label: t('tokenUsage.input'), value: msg.response?.usage?.input_tokens }, 
-                      { label: t('tokenUsage.output'), value: msg.response?.usage?.output_tokens }
+                      { label: "Total Tokens", value: msg.response?.usage?.total_tokens },
+                      { label: "Input Tokens", value: msg.response?.usage?.input_tokens }, 
+                      { label: "Output Tokens", value: msg.response?.usage?.output_tokens }
                     ];
 
                     return (
