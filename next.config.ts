@@ -2,15 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Exclude sample code directory from build
-  outputFileTracingExcludes: {
-    '*': ['./sample code/**/*'],
-  },
-  // Exclude sample code from TypeScript compilation
+  // Ensure proper build output
+  output: 'standalone',
+  // TypeScript configuration
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Exclude sample code from ESLint
+  // ESLint configuration
   eslint: {
     ignoreDuringBuilds: false,
   },
