@@ -27,7 +27,8 @@ import {
   BarChart3,
   Kanban,
   TrendingUp,
-  Star
+  Star,
+  Trash2
 } from 'lucide-react';
 
 interface Candidate {
@@ -52,6 +53,7 @@ export default function CandidatesPage() {
   const [jobFilter, setJobFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
+  const [deletingCandidate, setDeletingCandidate] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCandidates();
@@ -261,6 +263,34 @@ export default function CandidatesPage() {
         newSet.delete(candidateId);
         return newSet;
       });
+    }
+  };
+
+  const deleteCandidate = async (candidateId: string) => {
+    if (!confirm('Are you sure you want to delete this candidate? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingCandidate(candidateId);
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove the candidate from the local state
+        setCandidates(prev => prev.filter(candidate => candidate.id !== candidateId));
+        alert('Candidate deleted successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete candidate:', errorData);
+        alert(`Failed to delete candidate: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      alert(`Error deleting candidate: ${error}`);
+    } finally {
+      setDeletingCandidate(null);
     }
   };
 
@@ -493,6 +523,25 @@ export default function CandidatesPage() {
                         Outreach
                       </Button>
                     </Link>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => deleteCandidate(candidate.id)}
+                      disabled={deletingCandidate === candidate.id}
+                    >
+                      {deletingCandidate === candidate.id ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardContent>

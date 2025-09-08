@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,10 @@ interface Job {
 function AddCandidateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
+  // Initialize candidate with default values
   const [candidate, setCandidate] = useState({
     name: '',
     email: '',
@@ -56,19 +58,28 @@ function AddCandidateForm() {
     summary?: string;
     linkedinUrl?: string;
     location?: string;
+    resumeUrl?: string;
   } | null>(null);
 
   useEffect(() => {
     fetchJobs();
   }, []);
 
+  // Handle job preselection from URL parameters
   useEffect(() => {
-    // Pre-select job if passed in URL
-    const jobIdFromUrl = searchParams.get('jobId');
-    if (jobIdFromUrl) {
-      setCandidate(prev => ({ ...prev, jobId: jobIdFromUrl }));
+    if (jobs.length > 0) {
+      const jobIdFromUrl = searchParams.get('jobId');
+      
+      if (jobIdFromUrl && candidate.jobId !== jobIdFromUrl) {
+        const jobExists = jobs.find(job => job.id === jobIdFromUrl);
+        
+        if (jobExists) {
+          setCandidate(prev => ({ ...prev, jobId: jobIdFromUrl }));
+          console.log('✅ Job preselected:', jobExists.title);
+        }
+      }
     }
-  }, [searchParams]);
+  }, [jobs, searchParams]);
 
   const fetchJobs = async () => {
     try {
@@ -103,11 +114,12 @@ function AddCandidateForm() {
     const allowedTypes = [
       'application/pdf',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain' // Allow plain text for testing
     ];
     
     if (!allowedTypes.includes(file.type)) {
-      alert('Please upload a PDF or Word document (.pdf, .doc, .docx)');
+      alert('Please upload a PDF, Word document, or plain text file (.pdf, .doc, .docx, .txt)');
       return;
     }
 
@@ -164,7 +176,8 @@ function AddCandidateForm() {
           email: result.data.email || prev.email,
           phone: result.data.phone || prev.phone,
           linkedinUrl: result.data.linkedinUrl || prev.linkedinUrl,
-          notes: result.data.summary || prev.notes
+          notes: result.data.summary || prev.notes,
+          resumeUrl: result.data.resumeUrl || prev.resumeUrl
         }));
       } else {
         setResumeAnalysis('Resume parsing completed but no data was extracted.');
@@ -188,13 +201,24 @@ function AddCandidateForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...candidate,
+          name: candidate.name,
+          email: candidate.email,
+          phone: candidate.phone,
+          linkedinUrl: candidate.linkedinUrl,
+          resumeUrl: candidate.resumeUrl,
+          jobId: candidate.jobId,
           status: 'pending'
         }),
       });
 
       if (response.ok) {
-        router.push('/candidates');
+        // Redirect back to the job's candidates view if jobId is present
+        const jobIdFromUrl = searchParams.get('jobId');
+        if (jobIdFromUrl) {
+          router.push(`/jobs/${jobIdFromUrl}?tab=candidates`);
+        } else {
+          router.push('/candidates');
+        }
       } else {
         console.error('Failed to create candidate');
       }
@@ -251,7 +275,7 @@ function AddCandidateForm() {
                   <Input
                     id="resume"
                     type="file"
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
@@ -261,7 +285,7 @@ function AddCandidateForm() {
                       Click to upload or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      PDF, DOC, DOCX (max 10MB)
+                      PDF, DOC, DOCX, TXT (max 10MB)
                     </p>
                   </label>
                 </div>
@@ -281,6 +305,7 @@ function AddCandidateForm() {
                         setResumeFile(null);
                         setResumeAnalysis('');
                         setParsedData(null);
+                        setCandidate(prev => ({ ...prev, resumeUrl: '' }));
                       }}
                     >
                       <X className="w-4 h-4" />
@@ -303,6 +328,28 @@ function AddCandidateForm() {
                   <h4 className="font-medium text-green-900 mb-2">AI Analysis Complete</h4>
                   <div className="text-sm text-green-800 whitespace-pre-line">
                     {resumeAnalysis}
+                  </div>
+                </div>
+              )}
+
+              {candidate.resumeUrl && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Resume File
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={candidate.resumeUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline text-sm"
+                    >
+                      View Resume File
+                    </a>
+                    <span className="text-xs text-blue-600">
+                      ({resumeFile?.name || 'Resume file'})
+                    </span>
                   </div>
                 </div>
               )}
@@ -380,20 +427,38 @@ function AddCandidateForm() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="job">Job Position *</Label>
-              <Select value={candidate.jobId} onValueChange={(value) => setCandidate({ ...candidate, jobId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a job position" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobs.map((job) => (
-                    <SelectItem key={job.id} value={job.id}>
-                      {job.title}
-                      {job.department && ` - ${job.department}`}
-                      {job.location && ` (${job.location})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {jobs.length === 0 ? (
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                  <span>Loading jobs...</span>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                </div>
+              ) : (
+                <Select 
+                  value={candidate.jobId || ""} 
+                  onValueChange={(value) => setCandidate({ ...candidate, jobId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue 
+                      placeholder="Select a job position"
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobs.map((job) => (
+                      <SelectItem key={job.id} value={job.id}>
+                        {job.title}
+                        {job.department && ` - ${job.department}`}
+                        {job.location && ` (${job.location})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500">
+                  Debug: Selected jobId = {candidate.jobId || 'none'}, Jobs loaded = {jobs.length}
+                </div>
+              )}
             </div>
 
             {selectedJob && (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,7 @@ interface Candidate {
 
 export default function JobDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const jobId = params.id as string;
   
   const [job, setJob] = useState<Job | null>(null);
@@ -71,10 +72,19 @@ export default function JobDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([]);
+  const [deletingCandidate, setDeletingCandidate] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobDetails();
   }, [jobId]);
+
+  useEffect(() => {
+    // Handle tab parameter from URL
+    const tab = searchParams.get('tab');
+    if (tab && ['overview', 'candidates', 'questions', 'interviews'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const fetchJobDetails = async () => {
     try {
@@ -199,6 +209,34 @@ export default function JobDetailPage() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const deleteCandidate = async (candidateId: string) => {
+    if (!confirm('Are you sure you want to delete this candidate? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingCandidate(candidateId);
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh the job details to update the candidates list
+        await fetchJobDetails();
+        alert('Candidate deleted successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete candidate:', errorData);
+        alert(`Failed to delete candidate: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      alert(`Error deleting candidate: ${error}`);
+    } finally {
+      setDeletingCandidate(null);
+    }
   };
 
   if (loading) {
@@ -424,6 +462,25 @@ export default function JobDetailPage() {
                             Outreach
                           </Button>
                         </Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => deleteCandidate(candidate.id)}
+                          disabled={deletingCandidate === candidate.id}
+                        >
+                          {deletingCandidate === candidate.id ? (
+                            <>
+                              <Clock className="w-4 h-4 mr-2 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   ))}

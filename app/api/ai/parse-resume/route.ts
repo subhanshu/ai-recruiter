@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { saveResumeFile } from '@/lib/file-storage';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,12 +19,13 @@ export async function POST(request: NextRequest) {
     const allowedTypes = [
       'application/pdf',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
     ];
     
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Invalid file type. Please upload a PDF or Word document.' 
+        error: 'Invalid file type. Please upload a PDF, Word document, or plain text file.' 
       }, { status: 400 });
     }
 
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
     
     try {
       if (file.type === 'application/pdf') {
-        // Parse PDF using dynamic import
+        // Parse PDF using dynamic import (now with serverExternalPackages config)
         const pdf = (await import('pdf-parse')).default;
         const pdfData = await pdf(buffer);
         resumeText = pdfData.text;
@@ -52,13 +54,16 @@ export async function POST(request: NextRequest) {
         const mammoth = (await import('mammoth')).default;
         const result = await mammoth.extractRawText({ buffer });
         resumeText = result.value;
+      } else if (file.type === 'text/plain') {
+        // Handle plain text files
+        resumeText = buffer.toString('utf-8');
       } else {
         throw new Error('Unsupported file type');
       }
     } catch (parseError) {
       console.error('File parsing error:', parseError);
       return NextResponse.json({ 
-        error: 'Failed to extract text from file. Please ensure the file is not corrupted.' 
+        error: (parseError as Error).message || 'Failed to extract text from file. Please ensure the file is not corrupted.' 
       }, { status: 400 });
     }
 
@@ -68,12 +73,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Save the resume file and get the URL
+    const resumeUrl = await saveResumeFile(file);
+
     // Use AI to parse the resume text
     const parsedData = await parseResumeWithAI(resumeText);
 
     return NextResponse.json({
       success: true,
-      data: parsedData,
+      data: {
+        ...parsedData,
+        resumeUrl: resumeUrl
+      },
       message: 'Resume parsed successfully'
     });
 

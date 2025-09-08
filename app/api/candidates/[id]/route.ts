@@ -32,3 +32,30 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const candidateId = (await params).id;
+    
+    const { error } = await supabaseClient
+      .from('Candidate')
+      .delete()
+      .eq('id', candidateId);
+    
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ success: true, message: 'Candidate deleted successfully' });
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete candidate' },
+      { status: 500 }
+    );
+  }
+}
