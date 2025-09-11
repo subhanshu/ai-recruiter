@@ -92,6 +92,12 @@ export default function RootLayout({
                     AI Assistant
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link className="nav-link" href="/help">
+                    <i className="bi bi-question-circle me-1"></i>
+                    Help
+                  </Link>
+                </li>
               </ul>
               <ul className="navbar-nav">
                 <li className="nav-item dropdown">

@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { DashboardHelpWidget } from '@/components/help-widget';
 
 interface Job {
   id: string;
@@ -497,6 +498,9 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Help Widget */}
+      <DashboardHelpWidget />
     </div>
   );
 }

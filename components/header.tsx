@@ -36,6 +36,9 @@ export function Header() {
           <Link href="/jobs" className="text-sm hover:underline">
             Jobs
           </Link>
+          <Link href="/help" className="text-sm hover:underline">
+            Help
+          </Link>
         </motion.nav>
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
