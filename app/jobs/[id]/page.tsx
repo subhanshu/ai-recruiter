@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Briefcase, 
   MapPin, 
@@ -73,6 +74,13 @@ export default function JobDetailPage() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([]);
   const [deletingCandidate, setDeletingCandidate] = useState<string | null>(null);
+  
+  // Question management state
+  const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [addingQuestion, setAddingQuestion] = useState(false);
+  const [newQuestionText, setNewQuestionText] = useState('');
+  const [deletingQuestion, setDeletingQuestion] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobDetails();
@@ -236,6 +244,99 @@ export default function JobDetailPage() {
       alert(`Error deleting candidate: ${error}`);
     } finally {
       setDeletingCandidate(null);
+    }
+  };
+
+  // Question management functions
+  const addQuestion = async () => {
+    if (!newQuestionText.trim()) return;
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobId,
+          text: newQuestionText.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        await fetchJobDetails();
+        setNewQuestionText('');
+        setAddingQuestion(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to add question: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error adding question:', error);
+      alert(`Error adding question: ${error}`);
+    }
+  };
+
+  const startEditingQuestion = (questionId: string, currentText: string) => {
+    setEditingQuestion(questionId);
+    setEditingText(currentText);
+  };
+
+  const cancelEditing = () => {
+    setEditingQuestion(null);
+    setEditingText('');
+  };
+
+  const saveQuestion = async (questionId: string) => {
+    if (!editingText.trim()) return;
+
+    try {
+      const response = await fetch(`/api/questions/${questionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: editingText.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        await fetchJobDetails();
+        setEditingQuestion(null);
+        setEditingText('');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update question: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error updating question:', error);
+      alert(`Error updating question: ${error}`);
+    }
+  };
+
+  const deleteQuestion = async (questionId: string) => {
+    if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingQuestion(questionId);
+    try {
+      const response = await fetch(`/api/questions/${questionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchJobDetails();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to delete question: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      alert(`Error deleting question: ${error}`);
+    } finally {
+      setDeletingQuestion(null);
     }
   };
 
@@ -546,7 +647,13 @@ export default function JobDetailPage() {
                       </>
                     )}
                   </Button>
-                  <Button size="sm">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      console.log('Header add question button clicked');
+                      setAddingQuestion(true);
+                    }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Question
                   </Button>
@@ -619,6 +726,52 @@ export default function JobDetailPage() {
                 </div>
               )}
 
+              {/* Add new question form */}
+              {addingQuestion && (
+                <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Add New Question</h4>
+                  <div className="space-y-3">
+                    <Textarea
+                      value={newQuestionText}
+                      onChange={(e) => setNewQuestionText(e.target.value)}
+                      placeholder="Enter your question here..."
+                      className="resize-none"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={addQuestion} disabled={!newQuestionText.trim()}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Question
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        setAddingQuestion(false);
+                        setNewQuestionText('');
+                      }}>
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add question button - always show when not adding */}
+              {!addingQuestion && (
+                <div className="mb-6">
+                  <Button 
+                    onClick={() => {
+                      console.log('Add question button clicked');
+                      setAddingQuestion(true);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Question
+                  </Button>
+                </div>
+              )}
+
               {/* Show existing questions */}
               {(!job.questions || job.questions.length === 0) && generatedQuestions.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -637,16 +790,61 @@ export default function JobDetailPage() {
                           {index + 1}
                         </div>
                         <div className="flex-1">
-                          <p className="text-gray-900">{question.text}</p>
+                          {editingQuestion === question.id ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                className="resize-none"
+                                rows={2}
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => saveQuestion(question.id)}
+                                  disabled={!editingText.trim()}
+                                >
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={cancelEditing}
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-900">{question.text}</p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        {editingQuestion !== question.id && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => startEditingQuestion(question.id, question.text)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-600"
+                              onClick={() => deleteQuestion(question.id)}
+                              disabled={deletingQuestion === question.id}
+                            >
+                              {deletingQuestion === question.id ? (
+                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                 </div>
