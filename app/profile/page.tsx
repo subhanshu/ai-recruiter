@@ -6,13 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   User, 
-  Mail, 
-  Phone, 
-  Building, 
-  MapPin,
   Edit,
   Save,
-  X
+  X,
+  Building
 } from 'lucide-react';
 import { useState } from 'react';
 

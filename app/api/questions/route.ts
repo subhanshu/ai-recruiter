@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
     
     return NextResponse.json(question, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create question' },
       { status: 500 }

@@ -90,7 +90,7 @@ Format your response as JSON:
     let evaluationData;
     try {
       evaluationData = JSON.parse(response);
-    } catch (parseError) {
+    } catch {
       // Fallback if JSON parsing fails
       evaluationData = {
         score: 70,

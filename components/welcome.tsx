@@ -1,7 +1,3 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { GithubIcon } from "lucide-react"
-import Link from "next/link"
 
 export const Welcome = () => {
   return (

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       ...outreachLink,
       interviewUrl
     }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create outreach link' },
       { status: 500 }
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     })) || [];
     
     return NextResponse.json(linksWithUrls);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch outreach links' },
       { status: 500 }

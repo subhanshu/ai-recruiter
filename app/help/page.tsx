@@ -15,24 +15,13 @@ import {
   Users, 
   Briefcase, 
   Video, 
-  FileText, 
   Settings,
   ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  Lightbulb,
   ExternalLink,
   Play,
-  Download,
-  Upload,
-  Mail,
-  Phone,
-  Calendar,
   BarChart3,
   Target,
-  Zap,
-  Shield,
-  Clock
+  Mail
 } from "lucide-react";
 
 export default function HelpPage() {
@@ -485,7 +474,7 @@ export default function HelpPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-gray-600">
-                  Can't find what you're looking for? Our support team is here to help.
+                  Can&apos;t find what you&apos;re looking for? Our support team is here to help.
                 </p>
                 <Button className="w-full">
                   <MessageSquare className="w-4 h-4 mr-2" />
@@ -518,7 +507,7 @@ export default function HelpPage() {
                 {searchQuery && (
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      Showing {filteredHowToSections.reduce((acc, section) => acc + section.items.length, 0)} results for "{searchQuery}"
+                      Showing {filteredHowToSections.reduce((acc, section) => acc + section.items.length, 0)} results for &quot;{searchQuery}&quot;
                     </p>
                   </div>
                 )}
@@ -581,7 +570,7 @@ export default function HelpPage() {
                 {searchQuery && (
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      Showing {filteredFaqSections.reduce((acc, section) => acc + section.questions.length, 0)} results for "{searchQuery}"
+                      Showing {filteredFaqSections.reduce((acc, section) => acc + section.questions.length, 0)} results for &quot;{searchQuery}&quot;
                     </p>
                   </div>
                 )}

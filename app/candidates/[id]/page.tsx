@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +14,6 @@ import {
   Calendar, 
   FileText, 
   Linkedin,
-  MapPin,
-  Building,
   MessageSquare,
   Eye,
   Clock,
@@ -26,7 +24,8 @@ import {
   Briefcase,
   Video,
   Copy,
-  Send
+  MapPin,
+  Building
 } from 'lucide-react';
 
 interface Candidate {
@@ -38,6 +37,15 @@ interface Candidate {
   createdAt: string;
   resumeUrl?: string;
   linkedinUrl?: string;
+  location?: string;
+  skills?: string;
+  experience?: string;
+  education?: string;
+  summary?: string;
+  workHistory?: string;
+  projects?: string;
+  certifications?: string;
+  languages?: string;
   job?: Job;
   interviews?: Interview[];
 }
@@ -80,12 +88,7 @@ export default function CandidateDetailPage() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [showInterviewLink, setShowInterviewLink] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCandidateDetails();
-    fetchInterviewLinks();
-  }, [candidateId]);
-
-  const fetchCandidateDetails = async () => {
+  const fetchCandidateDetails = useCallback(async () => {
     try {
       // For now, we'll fetch from the candidates endpoint and find the specific candidate
       // In a real app, you'd have a specific endpoint for individual candidates
@@ -159,9 +162,9 @@ export default function CandidateDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [candidateId]);
 
-  const fetchInterviewLinks = async () => {
+  const fetchInterviewLinks = useCallback(async () => {
     try {
       const response = await fetch(`/api/outreach?candidateId=${candidateId}`);
       if (response.ok) {
@@ -171,7 +174,12 @@ export default function CandidateDetailPage() {
     } catch (error) {
       console.error('Error fetching interview links:', error);
     }
-  };
+  }, [candidateId]);
+
+  useEffect(() => {
+    fetchCandidateDetails();
+    fetchInterviewLinks();
+  }, [candidateId, fetchCandidateDetails, fetchInterviewLinks]);
 
   const generateInterviewLink = async () => {
     if (!candidate?.job) return;
@@ -357,6 +365,15 @@ export default function CandidateDetailPage() {
                       <p className="text-gray-900">{candidate.phone}</p>
                     </div>
                   )}
+                  {candidate.location && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Location</label>
+                      <p className="text-gray-900 flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {candidate.location}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-gray-500">Status</label>
                     <div className="mt-1">{getStatusBadge(candidate.status)}</div>
@@ -403,6 +420,149 @@ export default function CandidateDetailPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Rich Candidate Data */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Skills and Experience */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" />
+                  Skills & Experience
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {candidate.experience && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Experience Level</label>
+                    <p className="text-gray-900">{candidate.experience}</p>
+                  </div>
+                )}
+                {candidate.skills && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Skills</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {JSON.parse(candidate.skills).map((skill: string, index: number) => (
+                        <Badge key={index} variant="secondary">{skill}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {candidate.education && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Education</label>
+                    <p className="text-gray-900">{candidate.education}</p>
+                  </div>
+                )}
+                {candidate.languages && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Languages</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {JSON.parse(candidate.languages).map((language: string, index: number) => (
+                        <Badge key={index} variant="outline">{language}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Professional Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5" />
+                  Professional Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {candidate.summary ? (
+                  <p className="text-gray-700 leading-relaxed">{candidate.summary}</p>
+                ) : (
+                  <p className="text-gray-500 italic">No summary available</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Work History and Projects */}
+          {(candidate.workHistory || candidate.projects) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Work History */}
+              {candidate.workHistory && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building className="w-5 h-5" />
+                      Work History
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {JSON.parse(candidate.workHistory).map((work: { position: string; company: string; duration: string; description?: string }, index: number) => (
+                      <div key={index} className="border-l-4 border-blue-200 pl-4">
+                        <h4 className="font-medium text-gray-900">{work.position}</h4>
+                        <p className="text-sm text-gray-600">{work.company}</p>
+                        <p className="text-xs text-gray-500">{work.duration}</p>
+                        {work.description && (
+                          <p className="text-sm text-gray-700 mt-2">{work.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Projects */}
+              {candidate.projects && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Projects
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {JSON.parse(candidate.projects).map((project: { name: string; description: string; technologies?: string[]; url?: string }, index: number) => (
+                      <div key={index} className="border-l-4 border-green-200 pl-4">
+                        <h4 className="font-medium text-gray-900">{project.name}</h4>
+                        <p className="text-sm text-gray-700 mt-1">{project.description}</p>
+                        {project.technologies && project.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {project.technologies.map((tech: string, techIndex: number) => (
+                              <Badge key={techIndex} variant="outline" className="text-xs">
+                                {tech}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Certifications */}
+          {candidate.certifications && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Certifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {JSON.parse(candidate.certifications).map((cert: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-sm">
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Application Tab */}

@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search, 
-  Filter, 
   Plus,
   User, 
   Building,
@@ -94,10 +93,6 @@ export default function KanbanBoardPage() {
     fetchJobs();
   }, []);
 
-  useEffect(() => {
-    filterCandidates();
-  }, [candidates, searchTerm, selectedJob]);
-
   const fetchCandidates = async () => {
     try {
       setLoading(true);
@@ -178,7 +173,7 @@ export default function KanbanBoardPage() {
     }
   };
 
-  const filterCandidates = () => {
+  const filterCandidates = useCallback(() => {
     let filtered = [...candidates];
 
     // Search filter
@@ -196,7 +191,11 @@ export default function KanbanBoardPage() {
     }
 
     setFilteredCandidates(filtered);
-  };
+  }, [candidates, searchTerm, selectedJob]);
+
+  useEffect(() => {
+    filterCandidates();
+  }, [candidates, searchTerm, selectedJob, filterCandidates]);
 
   const getCandidatesByStatus = (status: Candidate['interviewStatus']) => {
     return filteredCandidates.filter(candidate => candidate.interviewStatus === status);

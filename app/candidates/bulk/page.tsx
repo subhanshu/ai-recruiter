@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { BulkUploadProgress } from '@/components/bulk-upload-progress';
+import { useBulkUpload } from '@/hooks/use-bulk-upload';
 import { 
   Upload, 
   Download, 
@@ -38,21 +40,28 @@ interface CandidateImport {
   errors: string[];
 }
 
-export default function BulkUploadPage() {
+function BulkUploadPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { job, isUploading, progress, error, startBulkUpload, clearJob } = useBulkUpload();
+  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [resumeFiles, setResumeFiles] = useState<File[]>([]);
-  const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [candidates, setCandidates] = useState<CandidateImport[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [uploadMode, setUploadMode] = useState<'csv' | 'resumes'>('csv');
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+    
+    // Handle jobId from URL parameters
+    const jobIdFromUrl = searchParams.get('jobId');
+    if (jobIdFromUrl) {
+      setSelectedJobId(jobIdFromUrl);
+    }
+  }, [searchParams]);
 
   const fetchJobs = async () => {
     try {
@@ -157,117 +166,48 @@ export default function BulkUploadPage() {
   const processResumes = async () => {
     if (!selectedJobId || resumeFiles.length === 0) return;
     
-    setImporting(true);
-    setProgress(0);
-    
-    const processedCandidates: CandidateImport[] = [];
-    
-    for (let i = 0; i < resumeFiles.length; i++) {
-      const file = resumeFiles[i];
-      setProgress((i / resumeFiles.length) * 100);
-      
-      try {
-        const formData = new FormData();
-        formData.append('resume', file);
-        
-        const response = await fetch('/api/ai/parse-resume', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            processedCandidates.push({
-              name: result.data.name || file.name.replace(/\.[^/.]+$/, ""),
-              email: result.data.email || '',
-              phone: result.data.phone || '',
-              linkedinUrl: result.data.linkedinUrl || '',
-              status: result.data.email ? 'valid' : 'invalid',
-              errors: result.data.email ? [] : ['No email found in resume']
-            });
-          } else {
-            processedCandidates.push({
-              name: file.name.replace(/\.[^/.]+$/, ""),
-              email: '',
-              phone: '',
-              linkedinUrl: '',
-              status: 'invalid',
-              errors: ['Failed to parse resume']
-            });
-          }
-        } else {
-          processedCandidates.push({
-            name: file.name.replace(/\.[^/.]+$/, ""),
-            email: '',
-            phone: '',
-            linkedinUrl: '',
-            status: 'invalid',
-            errors: ['Failed to process resume']
-          });
-        }
-      } catch (error) {
-        processedCandidates.push({
-          name: file.name.replace(/\.[^/.]+$/, ""),
-          email: '',
-          phone: '',
-          linkedinUrl: '',
-          status: 'invalid',
-          errors: ['Error processing resume']
-        });
+    try {
+      const jobId = await startBulkUpload(selectedJobId, undefined, resumeFiles);
+      if (jobId) {
+        setPreviewMode(true);
       }
+    } catch (error) {
+      console.error('Failed to start bulk upload:', error);
     }
-    
-    setCandidates(processedCandidates);
-    setPreviewMode(true);
-    setProgress(100);
-    setImporting(false);
   };
 
   const handleImport = async () => {
     if (!selectedJobId) return;
 
-    setImporting(true);
-    setProgress(0);
-
-    const validCandidates = candidates.filter(c => c.status === 'valid');
-    
-    for (let i = 0; i < validCandidates.length; i++) {
-      const candidate = validCandidates[i];
-      
-      try {
-        const response = await fetch('/api/candidates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...candidate,
-            jobId: selectedJobId,
-            status: 'pending'
-          }),
-        });
-
-        if (response.ok) {
-          setCandidates(prev => prev.map(c => 
-            c === candidate ? { ...c, status: 'valid' } : c
-          ));
-        }
-      } catch (error) {
-        console.error('Error importing candidate:', error);
+    try {
+      const jobId = await startBulkUpload(selectedJobId, candidates);
+      if (jobId) {
+        setPreviewMode(true);
       }
-
-      setProgress(((i + 1) / validCandidates.length) * 100);
+    } catch (error) {
+      console.error('Failed to start bulk upload:', error);
     }
-
-    setImporting(false);
-    setTimeout(() => {
-      router.push('/candidates');
-    }, 2000);
   };
 
   const validCount = candidates.filter(c => c.status === 'valid').length;
   const invalidCount = candidates.filter(c => c.status === 'invalid').length;
+
+  // Determine back button destination
+  const getBackUrl = () => {
+    const jobIdFromUrl = searchParams.get('jobId');
+    if (jobIdFromUrl) {
+      return `/jobs/${jobIdFromUrl}?tab=candidates`;
+    }
+    return '/candidates';
+  };
+
+  const getBackText = () => {
+    const jobIdFromUrl = searchParams.get('jobId');
+    if (jobIdFromUrl) {
+      return '← Back to Job';
+    }
+    return '← Back to Candidates';
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -275,9 +215,9 @@ export default function BulkUploadPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Link href="/candidates">
+            <Link href={getBackUrl()}>
               <Button variant="ghost" size="sm">
-                ← Back to Candidates
+                {getBackText()}
               </Button>
             </Link>
           </div>
@@ -505,10 +445,10 @@ export default function BulkUploadPage() {
                       </div>
                       <Button 
                         onClick={processResumes} 
-                        disabled={!selectedJobId || importing}
+                        disabled={!selectedJobId || isUploading}
                         className="w-full"
                       >
-                        {importing ? (
+                        {isUploading ? (
                           <>
                             <Bot className="w-4 h-4 mr-2 animate-spin" />
                             Processing Resumes...
@@ -523,7 +463,7 @@ export default function BulkUploadPage() {
                     </div>
                   )}
 
-                  {importing && (
+                  {isUploading && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Processing resumes...</span>
@@ -539,17 +479,29 @@ export default function BulkUploadPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Import Progress */}
-          {importing && (
-            <Card>
+          {/* Background Processing Progress */}
+          {job && (
+            <BulkUploadProgress 
+              job={job} 
+              onClose={() => {
+                clearJob();
+                setPreviewMode(false);
+                if (job.status === 'completed') {
+                  router.push(getBackUrl());
+                }
+              }} 
+            />
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <Card className="border-red-200 bg-red-50">
               <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Importing candidates...</span>
-                    <span className="text-sm text-gray-500">{Math.round(progress)}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
+                <div className="flex items-center gap-2 text-red-700">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-medium">Upload Error</span>
                 </div>
+                <p className="text-sm text-red-600 mt-1">{error}</p>
               </CardContent>
             </Card>
           )}
@@ -616,10 +568,10 @@ export default function BulkUploadPage() {
                 <div className="flex items-center gap-4 pt-4 border-t">
                   <Button 
                     onClick={handleImport}
-                    disabled={validCount === 0 || !selectedJobId || importing}
+                    disabled={validCount === 0 || !selectedJobId || isUploading}
                     className="flex-1"
                   >
-                    {importing ? (
+                    {isUploading ? (
                       <>
                         <Bot className="w-4 h-4 mr-2 animate-spin" />
                         Importing {validCount} candidates...
@@ -635,7 +587,7 @@ export default function BulkUploadPage() {
                   <Button 
                     variant="outline" 
                     onClick={() => setPreviewMode(false)}
-                    disabled={importing}
+                    disabled={isUploading}
                   >
                     <X className="w-4 h-4 mr-2" />
                     Cancel
@@ -647,5 +599,13 @@ export default function BulkUploadPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BulkUploadPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BulkUploadPageContent />
+    </Suspense>
   );
 }

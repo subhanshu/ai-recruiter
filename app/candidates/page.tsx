@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,8 @@ import {
   Video,
   BarChart3,
   Kanban,
-  TrendingUp,
-  Star,
-  Trash2
+  Trash2,
+  MapPin
 } from 'lucide-react';
 
 interface Candidate {
@@ -38,6 +37,11 @@ interface Candidate {
   phone?: string;
   status: string;
   createdAt: string;
+  location?: string;
+  skills?: string;
+  experience?: string;
+  education?: string;
+  summary?: string;
   job?: {
     id: string;
     title: string;
@@ -58,10 +62,6 @@ export default function CandidatesPage() {
   useEffect(() => {
     fetchCandidates();
   }, []);
-
-  useEffect(() => {
-    filterCandidates();
-  }, [candidates, searchTerm, statusFilter, jobFilter, sortBy]);
 
   const fetchCandidates = async () => {
     try {
@@ -176,14 +176,21 @@ export default function CandidatesPage() {
     }
   };
 
-  const filterCandidates = () => {
+  const filterCandidates = useCallback(() => {
     let filtered = candidates;
 
     if (searchTerm) {
       filtered = filtered.filter(candidate =>
         candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (candidate.phone && candidate.phone.includes(searchTerm))
+        (candidate.phone && candidate.phone.includes(searchTerm)) ||
+        (candidate.location && candidate.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (candidate.experience && candidate.experience.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (candidate.education && candidate.education.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (candidate.summary && candidate.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (candidate.skills && JSON.parse(candidate.skills).some((skill: string) => 
+          skill.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
       );
     }
 
@@ -213,7 +220,11 @@ export default function CandidatesPage() {
     });
 
     setFilteredCandidates(filtered);
-  };
+  }, [candidates, searchTerm, statusFilter, jobFilter, sortBy]);
+
+  useEffect(() => {
+    filterCandidates();
+  }, [candidates, searchTerm, statusFilter, jobFilter, sortBy, filterCandidates]);
 
   const getUniqueStatuses = () => {
     const statuses = candidates.map(candidate => candidate.status).filter(Boolean);
@@ -486,6 +497,12 @@ export default function CandidatesPage() {
                           {candidate.phone}
                         </span>
                       )}
+                      {candidate.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {candidate.location}
+                        </span>
+                      )}
                       {candidate.job && (
                         <span className="flex items-center gap-1">
                           <FileText className="w-4 h-4" />
@@ -496,6 +513,48 @@ export default function CandidatesPage() {
                         <Calendar className="w-4 h-4" />
                         Applied {formatDate(candidate.createdAt)}
                       </span>
+                    </div>
+
+                    {/* Enhanced Data Display */}
+                    <div className="space-y-2">
+                      {candidate.experience && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-700">Experience:</span>
+                          <span className="text-gray-600 ml-2">{candidate.experience}</span>
+                        </div>
+                      )}
+                      
+                      {candidate.education && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-700">Education:</span>
+                          <span className="text-gray-600 ml-2">{candidate.education}</span>
+                        </div>
+                      )}
+
+                      {candidate.skills && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-700">Skills:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {JSON.parse(candidate.skills).slice(0, 5).map((skill: string, index: number) => (
+                              <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                {skill}
+                              </span>
+                            ))}
+                            {JSON.parse(candidate.skills).length > 5 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                                +{JSON.parse(candidate.skills).length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {candidate.summary && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-700">Summary:</span>
+                          <p className="text-gray-600 mt-1 line-clamp-2">{candidate.summary}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   

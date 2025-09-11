@@ -1,20 +1,16 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
   Search, 
-  Filter, 
   Download, 
-  Eye, 
-  Star, 
   Clock, 
   User, 
   Building,
@@ -64,15 +60,7 @@ function InterviewResultsContent() {
   const [filterBy, setFilterBy] = useState('all');
   const [selectedInterview, setSelectedInterview] = useState<InterviewResult | null>(null);
 
-  useEffect(() => {
-    fetchInterviews();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortInterviews();
-  }, [interviews, searchTerm, sortBy, filterBy]);
-
-  const fetchInterviews = async () => {
+  const fetchInterviews = useCallback(async () => {
     try {
       setLoading(true);
       let query = supabaseClient
@@ -99,9 +87,9 @@ function InterviewResultsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId]);
 
-  const filterAndSortInterviews = () => {
+  const filterAndSortInterviews = useCallback(() => {
     let filtered = [...interviews];
 
     // Search filter
@@ -145,7 +133,15 @@ function InterviewResultsContent() {
     });
 
     setFilteredInterviews(filtered);
-  };
+  }, [interviews, searchTerm, sortBy, filterBy]);
+
+  useEffect(() => {
+    fetchInterviews();
+  }, [fetchInterviews]);
+
+  useEffect(() => {
+    filterAndSortInterviews();
+  }, [interviews, searchTerm, sortBy, filterBy, filterAndSortInterviews]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';

@@ -46,16 +46,26 @@ model Question {
 }
 
 model Candidate {
-  id          String       @id @default(cuid())
-  name        String
-  email       String
-  phone       String?
-  resumeUrl   String?
-  linkedinUrl String?
-  createdAt   DateTime     @default(now())
-  jobId       String
-  job         Job          @relation(fields: [jobId], references: [id])
-  interviews  Interview[]
+  id            String       @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  resumeUrl     String?
+  linkedinUrl   String?
+  status        String       @default("pending")
+  location      String?
+  skills        String?      // JSON string of skills array
+  experience    String?      // Years of experience
+  education     String?      // Educational background
+  summary       String?      // Professional summary
+  workHistory   String?      // JSON string of work history
+  projects      String?      // JSON string of projects
+  certifications String?     // JSON string of certifications
+  languages     String?      // JSON string of languages
+  createdAt     DateTime     @default(now())
+  jobId         String
+  job           Job          @relation(fields: [jobId], references: [id])
+  interviews    Interview[]
   outreachLinks OutreachLink[]
 }
 

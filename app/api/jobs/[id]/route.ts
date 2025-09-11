@@ -32,7 +32,7 @@ export async function GET(
     }
     
     return NextResponse.json(job);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch job' },
       { status: 500 }
@@ -52,7 +52,7 @@ export async function PUT(
     const supabaseClient = await createClient(cookies());
     
     // Update the job
-    const { data: job, error } = await supabaseClient
+    const { error } = await supabaseClient
       .from('Job')
       .update({
         title,
@@ -113,7 +113,7 @@ export async function PUT(
     }
     
     return NextResponse.json(updatedJob);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update job' },
       { status: 500 }
@@ -146,7 +146,7 @@ export async function DELETE(
     }
     
     return NextResponse.json({ message: 'Job deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete job' },
       { status: 500 }

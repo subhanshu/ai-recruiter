@@ -1,9 +1,7 @@
 "use client"
 
-import { useTranslations } from "@/components/translations-context"
 
 export const Banner = () => {
-  const { t } = useTranslations();
 
   return (
     <div className="w-full bg-gradient-to-r from-gray-900 to-gray-700 py-2">

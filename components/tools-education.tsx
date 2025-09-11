@@ -1,24 +1,12 @@
 "use client"
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table"
 import { useTranslations } from "@/components/translations-context"
 
 
 export function ToolsEducation() {
   const { t } = useTranslations();
 
-  const AVAILABLE_TOOLS = [
+  const availableTools = [
     {
       name: t('tools.availableTools.copyFn.name'),
       description: t('tools.availableTools.copyFn.description'),
@@ -47,7 +35,9 @@ export function ToolsEducation() {
 
   return (
     <div className="w-full max-w-lg mt-4">
-      
+      <div className="text-sm text-gray-600">
+        Available tools: {availableTools.length}
+      </div>
     </div>
   )
 } 

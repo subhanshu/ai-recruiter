@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     }
     
     return NextResponse.json(candidates);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch candidates' },
       { status: 500 }
@@ -34,7 +34,24 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, phone, resumeUrl, linkedinUrl, jobId, status } = body;
+    const { 
+      name, 
+      email, 
+      phone, 
+      resumeUrl, 
+      linkedinUrl, 
+      jobId, 
+      status,
+      location,
+      skills,
+      experience,
+      education,
+      summary,
+      workHistory,
+      projects,
+      certifications,
+      languages
+    } = body;
     
     // Validate required fields
     if (!name || !email || !jobId) {
@@ -56,8 +73,17 @@ export async function POST(req: Request) {
           phone: phone || null,
           resumeUrl: resumeUrl || null,
           linkedinUrl: linkedinUrl || null,
-          jobId
-          // Note: status field will be added when database schema is updated
+          location: location || null,
+          skills: skills ? (typeof skills === 'string' ? skills : JSON.stringify(skills)) : null,
+          experience: experience || null,
+          education: education || null,
+          summary: summary || null,
+          workHistory: workHistory ? (typeof workHistory === 'string' ? workHistory : JSON.stringify(workHistory)) : null,
+          projects: projects ? (typeof projects === 'string' ? projects : JSON.stringify(projects)) : null,
+          certifications: certifications ? (typeof certifications === 'string' ? certifications : JSON.stringify(certifications)) : null,
+          languages: languages ? (typeof languages === 'string' ? languages : JSON.stringify(languages)) : null,
+          jobId,
+          status: status || 'pending'
         }
       ])
       .select()

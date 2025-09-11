@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,10 +83,6 @@ export default function JobDetailPage() {
   const [deletingQuestion, setDeletingQuestion] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchJobDetails();
-  }, [jobId]);
-
-  useEffect(() => {
     // Handle tab parameter from URL
     const tab = searchParams.get('tab');
     if (tab && ['overview', 'candidates', 'questions', 'interviews'].includes(tab)) {
@@ -94,7 +90,7 @@ export default function JobDetailPage() {
     }
   }, [searchParams]);
 
-  const fetchJobDetails = async () => {
+  const fetchJobDetails = useCallback(async () => {
     try {
       const [jobResponse, candidatesResponse] = await Promise.all([
         fetch(`/api/jobs/${jobId}`),
@@ -192,7 +188,11 @@ export default function JobDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId, job]);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, [jobId, fetchJobDetails]);
 
   const getStatusBadge = (status: string | undefined | null) => {
     if (!status) {
@@ -508,6 +508,12 @@ export default function JobDetailPage() {
                     <Button size="sm">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Candidate
+                    </Button>
+                  </Link>
+                  <Link href={`/candidates/bulk?jobId=${jobId}`}>
+                    <Button size="sm" variant="outline">
+                      <Users className="w-4 h-4 mr-2" />
+                      Bulk Upload
                     </Button>
                   </Link>
                   <Link href={`/outreach?jobId=${jobId}`}>

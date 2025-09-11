@@ -22,7 +22,7 @@ export async function PUT(
     
     const supabaseClient = await createClient(cookies());
     
-    const updateData: any = { text };
+    const updateData: { text: string; order?: number } = { text };
     if (order !== undefined) {
       updateData.order = order;
     }
@@ -43,7 +43,7 @@ export async function PUT(
     }
     
     return NextResponse.json(question);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update question' },
       { status: 500 }
@@ -70,7 +70,7 @@ export async function DELETE(
     }
     
     return NextResponse.json({ message: 'Question deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete question' },
       { status: 500 }

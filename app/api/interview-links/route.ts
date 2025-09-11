@@ -92,7 +92,7 @@ export async function GET(req: Request) {
     })) || [];
     
     return NextResponse.json(linksWithUrls);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch interview links' },
       { status: 500 }

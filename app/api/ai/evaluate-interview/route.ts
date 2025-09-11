@@ -32,15 +32,24 @@ Required Skills: ${job.requiredSkills || 'Not specified'}
 Qualifications: ${job.qualifications || 'Not specified'}
 ` : '';
 
-    // Get candidate details
+    // Get candidate details with rich data
     const { data: candidate } = await supabaseClient
       .from('Candidate')
-      .select('name, email')
+      .select('name, email, skills, experience, education, summary, workHistory, projects, certifications, languages, location')
       .eq('id', candidateId)
       .single();
 
     const candidateContext = candidate ? `
 Candidate: ${candidate.name} (${candidate.email})
+Location: ${candidate.location || 'Not specified'}
+Experience: ${candidate.experience || 'Not specified'}
+Education: ${candidate.education || 'Not specified'}
+Skills: ${candidate.skills ? JSON.parse(candidate.skills).join(', ') : 'Not specified'}
+Professional Summary: ${candidate.summary || 'Not available'}
+Work History: ${candidate.workHistory ? JSON.parse(candidate.workHistory).map((work: { position: string; company: string; duration: string }) => `${work.position} at ${work.company} (${work.duration})`).join('; ') : 'Not available'}
+Projects: ${candidate.projects ? JSON.parse(candidate.projects).map((project: { name: string; description: string }) => `${project.name} - ${project.description}`).join('; ') : 'Not available'}
+Certifications: ${candidate.certifications ? JSON.parse(candidate.certifications).join(', ') : 'Not available'}
+Languages: ${candidate.languages ? JSON.parse(candidate.languages).join(', ') : 'Not specified'}
 ` : '';
 
     // Evaluate each question-answer pair
@@ -49,7 +58,7 @@ Candidate: ${candidate.name} (${candidate.email})
       if (!qa.answer) continue;
 
       const prompt = `
-You are an expert interviewer evaluating a candidate's response. Please provide a detailed evaluation.
+You are an expert interviewer evaluating a candidate's response. Please provide a detailed evaluation considering the candidate's background and experience.
 
 ${jobContext}
 ${candidateContext}
@@ -58,26 +67,34 @@ Question: ${qa.text}
 Category: ${qa.category || 'general'}
 Candidate's Answer: ${qa.answer}
 
-Please evaluate this answer on the following criteria:
-1. Relevance to the question
-2. Depth of understanding
-3. Specificity and examples provided
-4. Communication clarity
-5. Technical accuracy (if applicable)
+Please evaluate this answer considering:
+1. Relevance to the question and job requirements
+2. Depth of understanding based on their experience level
+3. Specificity and examples provided (consider their work history)
+4. Communication clarity and professionalism
+5. Technical accuracy (if applicable, consider their skills)
 6. Problem-solving approach (if applicable)
+7. Alignment with their background and experience
+8. How well they leverage their past projects/work history
+
+Consider the candidate's:
+- Experience level: ${candidate?.experience || 'Not specified'}
+- Skills: ${candidate?.skills ? JSON.parse(candidate.skills).join(', ') : 'Not specified'}
+- Work history: ${candidate?.workHistory ? JSON.parse(candidate.workHistory).map((work: { position: string; company: string }) => `${work.position} at ${work.company}`).join(', ') : 'Not available'}
+- Projects: ${candidate?.projects ? JSON.parse(candidate.projects).map((project: { name: string }) => project.name).join(', ') : 'Not available'}
 
 Provide:
-1. A score from 0-100
-2. A brief evaluation (2-3 sentences)
+1. A score from 0-100 (considering their experience level)
+2. A brief evaluation (2-3 sentences) that references their background
 3. Constructive feedback for improvement
-4. A follow-up question suggestion (optional)
+4. A follow-up question suggestion (optional) that builds on their experience
 
 Format your response as JSON:
 {
   "score": number,
-  "evaluation": "brief evaluation text",
+  "evaluation": "brief evaluation text that considers their background",
   "feedback": "constructive feedback text",
-  "followUpQuestion": "optional follow-up question"
+  "followUpQuestion": "optional follow-up question that leverages their experience"
 }
 `;
 

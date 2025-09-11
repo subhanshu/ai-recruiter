@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,6 @@ interface Job {
 function AddCandidateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   // Initialize candidate with default values
@@ -42,24 +41,21 @@ function AddCandidateForm() {
     jobId: '',
     resumeUrl: '',
     linkedinUrl: '',
+    location: '',
+    skills: '',
+    experience: '',
+    education: '',
+    summary: '',
+    workHistory: '',
+    projects: '',
+    certifications: '',
+    languages: '',
     notes: ''
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeAnalysis, setResumeAnalysis] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
 
-  const [parsedData, setParsedData] = useState<{
-    name?: string;
-    email?: string;
-    phone?: string;
-    skills?: string[];
-    experience?: string;
-    education?: string;
-    summary?: string;
-    linkedinUrl?: string;
-    location?: string;
-    resumeUrl?: string;
-  } | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -79,7 +75,7 @@ function AddCandidateForm() {
         }
       }
     }
-  }, [jobs, searchParams]);
+  }, [jobs, searchParams, candidate.jobId]);
 
   const fetchJobs = async () => {
     try {
@@ -132,7 +128,6 @@ function AddCandidateForm() {
     setResumeFile(file);
     setAnalyzing(true);
     setResumeAnalysis('');
-    setParsedData(null);
 
     try {
       const formData = new FormData();
@@ -151,7 +146,6 @@ function AddCandidateForm() {
       const result = await response.json();
       
       if (result.success && result.data) {
-        setParsedData(result.data);
         setResumeAnalysis(`
           **AI Analysis Complete!**
           
@@ -163,6 +157,16 @@ function AddCandidateForm() {
           - **Location:** ${result.data.location || 'Not specified'}
           
           **Skills Identified:** ${result.data.skills ? result.data.skills.join(', ') : 'None identified'}
+          
+          **Education:** ${result.data.education || 'Not specified'}
+          
+          **Work History:** ${result.data.workHistory ? result.data.workHistory.length + ' positions found' : 'None found'}
+          
+          **Projects:** ${result.data.projects ? result.data.projects.length + ' projects found' : 'None found'}
+          
+          **Certifications:** ${result.data.certifications ? result.data.certifications.join(', ') : 'None found'}
+          
+          **Languages:** ${result.data.languages ? result.data.languages.join(', ') : 'Not specified'}
           
           **Summary:** ${result.data.summary || 'No summary available'}
           
@@ -176,6 +180,15 @@ function AddCandidateForm() {
           email: result.data.email || prev.email,
           phone: result.data.phone || prev.phone,
           linkedinUrl: result.data.linkedinUrl || prev.linkedinUrl,
+          location: result.data.location || prev.location,
+          skills: result.data.skills ? JSON.stringify(result.data.skills) : prev.skills,
+          experience: result.data.experience || prev.experience,
+          education: result.data.education || prev.education,
+          summary: result.data.summary || prev.summary,
+          workHistory: result.data.workHistory ? JSON.stringify(result.data.workHistory) : prev.workHistory,
+          projects: result.data.projects ? JSON.stringify(result.data.projects) : prev.projects,
+          certifications: result.data.certifications ? JSON.stringify(result.data.certifications) : prev.certifications,
+          languages: result.data.languages ? JSON.stringify(result.data.languages) : prev.languages,
           notes: result.data.summary || prev.notes,
           resumeUrl: result.data.resumeUrl || prev.resumeUrl
         }));
@@ -206,6 +219,15 @@ function AddCandidateForm() {
           phone: candidate.phone,
           linkedinUrl: candidate.linkedinUrl,
           resumeUrl: candidate.resumeUrl,
+          location: candidate.location,
+          skills: candidate.skills,
+          experience: candidate.experience,
+          education: candidate.education,
+          summary: candidate.summary,
+          workHistory: candidate.workHistory,
+          projects: candidate.projects,
+          certifications: candidate.certifications,
+          languages: candidate.languages,
           jobId: candidate.jobId,
           status: 'pending'
         }),
@@ -304,7 +326,6 @@ function AddCandidateForm() {
                       onClick={() => {
                         setResumeFile(null);
                         setResumeAnalysis('');
-                        setParsedData(null);
                         setCandidate(prev => ({ ...prev, resumeUrl: '' }));
                       }}
                     >
@@ -410,6 +431,77 @@ function AddCandidateForm() {
                   value={candidate.linkedinUrl}
                   onChange={(e) => setCandidate({ ...candidate, linkedinUrl: e.target.value })}
                   placeholder="https://linkedin.com/in/johndoe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={candidate.location}
+                  onChange={(e) => setCandidate({ ...candidate, location: e.target.value })}
+                  placeholder="San Francisco, CA"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="experience">Experience Level</Label>
+                <Input
+                  id="experience"
+                  value={candidate.experience}
+                  onChange={(e) => setCandidate({ ...candidate, experience: e.target.value })}
+                  placeholder="5 years, Senior level, etc."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="education">Education</Label>
+                <Input
+                  id="education"
+                  value={candidate.education}
+                  onChange={(e) => setCandidate({ ...candidate, education: e.target.value })}
+                  placeholder="Bachelor of Science in Computer Science"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skills">Skills (comma-separated)</Label>
+                <Input
+                  id="skills"
+                  value={candidate.skills}
+                  onChange={(e) => setCandidate({ ...candidate, skills: e.target.value })}
+                  placeholder="JavaScript, React, Node.js, Python"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="languages">Languages (comma-separated)</Label>
+                <Input
+                  id="languages"
+                  value={candidate.languages}
+                  onChange={(e) => setCandidate({ ...candidate, languages: e.target.value })}
+                  placeholder="English, Spanish, French"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="certifications">Certifications (comma-separated)</Label>
+                <Input
+                  id="certifications"
+                  value={candidate.certifications}
+                  onChange={(e) => setCandidate({ ...candidate, certifications: e.target.value })}
+                  placeholder="AWS Certified, PMP, Google Cloud Professional"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="summary">Professional Summary</Label>
+                <Textarea
+                  id="summary"
+                  value={candidate.summary}
+                  onChange={(e) => setCandidate({ ...candidate, summary: e.target.value })}
+                  placeholder="Brief professional summary or objective..."
+                  rows={3}
                 />
               </div>
             </CardContent>

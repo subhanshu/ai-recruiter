@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -27,13 +27,7 @@ export default function EditJobPage() {
   const [fetchingJob, setFetchingJob] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (jobId) {
-      fetchJob();
-    }
-  }, [jobId]);
-
-  const fetchJob = async () => {
+  const fetchJob = useCallback(async () => {
     try {
       setFetchingJob(true);
       const response = await fetch(`/api/jobs/${jobId}`);
@@ -69,7 +63,13 @@ export default function EditJobPage() {
     } finally {
       setFetchingJob(false);
     }
-  };
+  }, [jobId]);
+
+  useEffect(() => {
+    if (jobId) {
+      fetchJob();
+    }
+  }, [jobId, fetchJob]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
