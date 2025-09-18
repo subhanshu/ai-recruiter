@@ -51,8 +51,8 @@ export async function DELETE(
     }
     
     return NextResponse.json({ success: true, message: 'Candidate deleted successfully' });
-  } catch (error) {
-    console.error('API error:', error);
+    } catch {
+    console.error('API error:');
     return NextResponse.json(
       { error: 'Failed to delete candidate' },
       { status: 500 }

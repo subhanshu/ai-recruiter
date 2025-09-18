@@ -95,8 +95,8 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json(candidate, { status: 201 });
-  } catch (error) {
-    console.error('API error:', error);
+    } catch {
+    console.error('API error:');
     return NextResponse.json(
       { error: 'Failed to create candidate' },
       { status: 500 }

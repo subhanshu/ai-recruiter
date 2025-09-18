@@ -39,7 +39,7 @@ export default function HelpPage() {
           description: "Learn how to create and configure your first job posting with AI-powered assistance",
           steps: [
             "Navigate to the Jobs section from the main dashboard",
-            "Click 'Add Job' to create a new job posting",
+            "Click &apos;Add Job&apos; to create a new job posting",
             "Paste your job description in the text area - AI will automatically parse and extract key details",
             "Review and edit the auto-populated fields (title, department, location, skills, qualifications)",
             "Save your job posting to generate AI screening questions",
@@ -51,7 +51,7 @@ export default function HelpPage() {
           description: "Add candidates individually or in bulk to start your recruitment process",
           steps: [
             "Go to the Candidates section from the main navigation",
-            "Click 'Add Candidate' for individual entry or 'Bulk Upload' for multiple candidates",
+            "Click &apos;Add Candidate&apos; for individual entry or &apos;Bulk Upload&apos; for multiple candidates",
             "Fill in candidate details (name, email, phone, resume, LinkedIn)",
             "For bulk upload, prepare a CSV/Excel file with required columns",
             "Assign candidates to specific job postings",
@@ -82,7 +82,7 @@ export default function HelpPage() {
           description: "Let AI extract key information from your job descriptions automatically",
           steps: [
             "Paste your complete job description in the text area",
-            "Click 'Parse with AI' to analyze the content",
+            "Click &apos;Parse with AI&apos; to analyze the content",
             "Review extracted information: job title, department, location, responsibilities",
             "AI identifies required skills, qualifications, and experience levels",
             "Edit any auto-populated fields as needed",
@@ -96,7 +96,7 @@ export default function HelpPage() {
             "After saving your job posting, AI automatically generates 8-10 screening questions",
             "Questions are tailored to the specific role and requirements",
             "Review each question for relevance and clarity",
-            "Edit questions to match your company's interview style",
+            "Edit questions to match your company&apos;s interview style",
             "Add custom questions if needed",
             "Save the final question set for candidate interviews"
           ]
@@ -236,7 +236,7 @@ export default function HelpPage() {
         },
         {
           title: "Customizing evaluation criteria",
-          description: "Adjust scoring criteria to match your company's priorities",
+          description: "Adjust scoring criteria to match your company&apos;s priorities",
           steps: [
             "Access evaluation settings from the Settings page",
             "Modify weightings for different skill categories",
@@ -301,7 +301,7 @@ export default function HelpPage() {
       questions: [
         {
           question: "What is AI Recruiter and how does it work?",
-          answer: "AI Recruiter is an intelligent hiring platform that automates the initial screening process using artificial intelligence. It helps you create job postings, generate relevant screening questions, conduct AI-powered interviews, and evaluate candidates objectively. The platform uses OpenAI's advanced models to provide natural conversation flow during interviews and accurate candidate assessments."
+          answer: "AI Recruiter is an intelligent hiring platform that automates the initial screening process using artificial intelligence. It helps you create job postings, generate relevant screening questions, conduct AI-powered interviews, and evaluate candidates objectively. The platform uses OpenAI&apos;s advanced models to provide natural conversation flow during interviews and accurate candidate assessments."
         },
         {
           question: "Is my data secure and private?",
@@ -331,11 +331,11 @@ export default function HelpPage() {
         },
         {
           question: "How long are interview recordings stored?",
-          answer: "Interview recordings are stored for 90 days by default, but you can adjust this setting based on your company's data retention policies. You can download recordings for permanent storage if needed. All recordings are automatically deleted after the retention period unless you choose to extend storage."
+          answer: "Interview recordings are stored for 90 days by default, but you can adjust this setting based on your company&apos;s data retention policies. You can download recordings for permanent storage if needed. All recordings are automatically deleted after the retention period unless you choose to extend storage."
         },
         {
           question: "Can I integrate AI Recruiter with my existing HR systems?",
-          answer: "Yes, we offer API access and webhook integrations to connect with popular HR systems, ATS platforms, and other recruitment tools. Contact our support team to discuss specific integration requirements and we'll help you set up the connections."
+          answer: "Yes, we offer API access and webhook integrations to connect with popular HR systems, ATS platforms, and other recruitment tools. Contact our support team to discuss specific integration requirements and we&apos;ll help you set up the connections."
         }
       ]
     },
@@ -349,15 +349,15 @@ export default function HelpPage() {
         },
         {
           question: "Can I change my plan anytime?",
-          answer: "Yes, you can upgrade or downgrade your plan at any time. Upgrades take effect immediately, while downgrades take effect at the next billing cycle. We'll prorate any charges to ensure you only pay for what you use."
+          answer: "Yes, you can upgrade or downgrade your plan at any time. Upgrades take effect immediately, while downgrades take effect at the next billing cycle. We&apos;ll prorate any charges to ensure you only pay for what you use."
         },
         {
           question: "Is there a free trial available?",
-          answer: "Yes, we offer a 14-day free trial with full access to all features. No credit card required to start. You can conduct up to 10 interviews during the trial period to evaluate the platform's effectiveness for your hiring needs."
+          answer: "Yes, we offer a 14-day free trial with full access to all features. No credit card required to start. You can conduct up to 10 interviews during the trial period to evaluate the platform&apos;s effectiveness for your hiring needs."
         },
         {
           question: "What happens if I exceed my monthly interview limit?",
-          answer: "If you exceed your monthly limit, you'll be notified and can either upgrade your plan or purchase additional interviews on a pay-per-use basis. We'll never interrupt an ongoing interview due to limits."
+          answer: "If you exceed your monthly limit, you&apos;ll be notified and can either upgrade your plan or purchase additional interviews on a pay-per-use basis. We&apos;ll never interrupt an ongoing interview due to limits."
         }
       ]
     },
@@ -366,7 +366,7 @@ export default function HelpPage() {
       icon: <MessageSquare className="w-5 h-5" />,
       questions: [
         {
-          question: "How can I get help if I'm having issues?",
+          question: "How can I get help if I&apos;m having issues?",
           answer: "We offer multiple support channels: 24/7 chat support in the app, email support at help@airecruiter.com, and comprehensive documentation. For urgent issues, you can also schedule a call with our support team. Response times are typically under 2 hours for critical issues."
         },
         {
@@ -375,11 +375,11 @@ export default function HelpPage() {
         },
         {
           question: "Can I request new features?",
-          answer: "Absolutely! We value customer feedback and regularly add new features based on user requests. You can submit feature requests through the app's feedback system, or contact our product team directly. We review all requests and prioritize based on user demand and technical feasibility."
+          answer: "Absolutely! We value customer feedback and regularly add new features based on user requests. You can submit feature requests through the app&apos;s feedback system, or contact our product team directly. We review all requests and prioritize based on user demand and technical feasibility."
         },
         {
           question: "What if I need to cancel my subscription?",
-          answer: "You can cancel your subscription at any time from your account settings. Your data will remain accessible for 30 days after cancellation, giving you time to export any information you need. We don't charge cancellation fees and will refund any unused portion of your current billing period."
+          answer: "You can cancel your subscription at any time from your account settings. Your data will remain accessible for 30 days after cancellation, giving you time to export any information you need. We don&apos;t charge cancellation fees and will refund any unused portion of your current billing period."
         }
       ]
     }

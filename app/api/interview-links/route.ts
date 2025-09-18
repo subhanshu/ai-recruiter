@@ -52,8 +52,8 @@ export async function POST(req: Request) {
       ...interviewLink,
       interviewUrl
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error in interview-links API:', error);
+    } catch {
+    console.error('Error in interview-links API:');
     return NextResponse.json(
       { error: 'Failed to create interview link' },
       { status: 500 }

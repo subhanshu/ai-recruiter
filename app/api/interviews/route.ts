@@ -38,8 +38,8 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json(interview, { status: 201 });
-  } catch (error) {
-    console.error('Error in interviews API:', error);
+    } catch {
+    console.error('Error in interviews API:');
     return NextResponse.json(
       { error: 'Failed to create interview' },
       { status: 500 }
