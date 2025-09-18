@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/db";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
+import { generateInterviewUrl } from "@/lib/url-utils";
 
 export async function POST(req: Request) {
   try {
@@ -45,8 +46,7 @@ export async function POST(req: Request) {
     }
     
     // Generate the interview URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const interviewUrl = `${baseUrl}/interview/${token}`;
+    const interviewUrl = generateInterviewUrl(token);
     
     return NextResponse.json({
       ...interviewLink,
@@ -85,10 +85,9 @@ export async function GET(req: Request) {
     }
     
     // Add interview URLs to the response
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const linksWithUrls = links?.map(link => ({
       ...link,
-      interviewUrl: `${baseUrl}/interview/${link.token}`
+      interviewUrl: generateInterviewUrl(link.token)
     })) || [];
     
     return NextResponse.json(linksWithUrls);

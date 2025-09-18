@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { generateUrl } from '@/lib/url-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         const parseFormData = new FormData();
         parseFormData.append('resume', file);
         
-        const parseResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ai/parse-resume`, {
+        const parseResponse = await fetch(generateUrl('/api/ai/parse-resume'), {
           method: 'POST',
           body: parseFormData,
         });

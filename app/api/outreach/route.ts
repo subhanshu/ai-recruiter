@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 import { supabaseClient } from "@/lib/supabase-client";
 import { v4 as uuidv4 } from 'uuid';
+import { generateInterviewUrl } from "@/lib/url-utils";
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     }
     
     // Generate the interview URL
-    const interviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/interview/${token}`;
+    const interviewUrl = generateInterviewUrl(token);
     
     return NextResponse.json({
       ...outreachLink,
@@ -77,10 +78,9 @@ export async function GET(req: Request) {
     }
     
     // Add interview URLs to the response
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const linksWithUrls = links?.map(link => ({
       ...link,
-      interviewUrl: `${baseUrl}/interview/${link.token}`
+      interviewUrl: generateInterviewUrl(link.token)
     })) || [];
     
     return NextResponse.json(linksWithUrls);
