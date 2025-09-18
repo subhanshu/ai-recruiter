@@ -5,6 +5,7 @@
 /**
  * Get the base URL for the application
  * This function handles different environments and deployment scenarios
+ * Optimized for Railway hosting with Supabase database
  */
 export function getBaseUrl(): string {
   // First, check if NEXT_PUBLIC_APP_URL is explicitly set
@@ -12,14 +13,14 @@ export function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
 
-  // For Vercel deployments
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  // For Railway deployments
+  // For Railway deployments (primary hosting platform)
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+
+  // For Railway with custom domain
+  if (process.env.RAILWAY_STATIC_URL) {
+    return process.env.RAILWAY_STATIC_URL;
   }
 
   // For other cloud providers that set PORT

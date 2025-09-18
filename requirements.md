@@ -120,7 +120,7 @@ Twilio WhatsApp API.
 
 SendGrid or AWS SES for email.
 
-Deployment: Vercel (Frontend), AWS/GCP (Backend & Storage if needed).
+Deployment: Railway (Full-stack), Supabase (Database), AWS/GCP (Storage if needed).
 
 4.2 APIs Needed
 OpenAI GPT-4o

@@ -18,16 +18,7 @@ NEXT_PUBLIC_APP_URL=https://your-actual-domain.com
 
 ### 2. Platform-Specific Configuration
 
-#### Vercel
-1. Go to your Vercel dashboard
-2. Select your project
-3. Go to Settings → Environment Variables
-4. Add a new variable:
-   - Name: `NEXT_PUBLIC_APP_URL`
-   - Value: `https://your-domain.vercel.app` (or your custom domain)
-   - Environment: Production (and Preview if needed)
-
-#### Railway
+#### Railway (Primary Platform)
 1. Go to your Railway project dashboard
 2. Click on your service
 3. Go to Variables tab
@@ -45,8 +36,8 @@ Set the environment variable in your platform's configuration:
 
 The application now includes automatic URL detection that works with:
 
-- **Vercel**: Uses `VERCEL_URL` environment variable
-- **Railway**: Uses `RAILWAY_PUBLIC_DOMAIN` environment variable
+- **Railway**: Uses `RAILWAY_PUBLIC_DOMAIN` environment variable (primary)
+- **Railway Custom Domains**: Uses `RAILWAY_STATIC_URL` environment variable
 - **Custom domains**: Set `NEXT_PUBLIC_APP_URL` explicitly
 
 ### 4. Verification

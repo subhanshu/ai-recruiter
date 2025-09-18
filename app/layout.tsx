@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react"
 import Script from "next/script";
 import Link from "next/link";
 
@@ -139,8 +138,6 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
-        
-        <Analytics />
       </body>
     </html>
   );

@@ -166,9 +166,9 @@ npm run lint
 
 This project is now organized for easy CI/CD deployment:
 
-- **Vercel**: Deploy directly from GitHub
+- **Railway**: Automatic deployment from GitHub (Primary platform)
 - **Netlify**: Build command: `npm run build`, publish directory: `.next`
-- **Railway**: Automatic deployment from GitHub
+- **Other platforms**: Standard Next.js deployment
 - **Docker**: Use the Dockerfile (if created) for containerized deployment
 
 ## Contributing
