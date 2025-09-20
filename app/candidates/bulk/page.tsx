@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BulkUploadProgress } from '@/components/bulk-upload-progress';
+import { BulkUploadProgressModal } from '@/components/bulk-upload-progress-modal';
 import { useBulkUpload } from '@/hooks/use-bulk-upload';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Upload, 
   Download, 
@@ -43,7 +44,8 @@ interface CandidateImport {
 function BulkUploadPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { job, isUploading, progress, error, startBulkUpload, clearJob } = useBulkUpload();
+  const { toast } = useToast();
+  const { isUploading, progress, error, sessionId, startBulkUpload, clearJob } = useBulkUpload();
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -52,6 +54,46 @@ function BulkUploadPageContent() {
   const [candidates, setCandidates] = useState<CandidateImport[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [uploadMode, setUploadMode] = useState<'csv' | 'resumes'>('csv');
+  const [showProgressModal, setShowProgressModal] = useState(false);
+
+  // Memoized callback to prevent infinite re-renders
+  const handleUploadComplete = useCallback((results: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    console.log('Upload completed:', results);
+    
+    // If upload was successful, navigate back to the appropriate page
+    if (results.status === 'completed' && results.results.some((r: any) => r.status === 'valid')) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const validCount = results.results.filter((r: any) => r.status === 'valid').length; // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast({
+        title: "Candidates imported successfully!",
+        description: `${validCount} candidates have been added to the job.`,
+        variant: "default",
+        duration: 5000, // 5 seconds
+      });
+      
+      // Delay navigation to allow toast to be visible
+      setTimeout(() => {
+        const jobIdFromUrl = searchParams.get('jobId');
+        if (jobIdFromUrl) {
+          router.push(`/jobs/${jobIdFromUrl}?tab=candidates`);
+        } else {
+          router.push('/candidates');
+        }
+      }, 2000); // 2 second delay
+    } else {
+      // If there were issues, show preview for review
+      const convertedCandidates = results.results.map((result: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        name: result.name,
+        email: result.email,
+        phone: result.phone,
+        linkedinUrl: result.linkedinUrl,
+        status: result.status,
+        errors: result.errors
+      }));
+      setCandidates(convertedCandidates);
+      setPreviewMode(true);
+      setShowProgressModal(false);
+    }
+  }, [searchParams, router, toast]);
 
   useEffect(() => {
     fetchJobs();
@@ -167,9 +209,9 @@ function BulkUploadPageContent() {
     if (!selectedJobId || resumeFiles.length === 0) return;
     
     try {
-      const jobId = await startBulkUpload(selectedJobId, undefined, resumeFiles);
-      if (jobId) {
-        setPreviewMode(true);
+      const uploadSessionId = await startBulkUpload(selectedJobId, undefined, resumeFiles);
+      if (uploadSessionId) {
+        setShowProgressModal(true);
       }
     } catch (error) {
       console.error('Failed to start bulk upload:', error);
@@ -182,7 +224,24 @@ function BulkUploadPageContent() {
     try {
       const jobId = await startBulkUpload(selectedJobId, candidates);
       if (jobId) {
-        setPreviewMode(true);
+        // Show success toast
+        const validCount = candidates.filter(c => c.status === 'valid').length;
+        toast({
+          title: "Candidates imported successfully!",
+          description: `${validCount} candidates have been added to the job.`,
+          variant: "default",
+          duration: 5000, // 5 seconds
+        });
+        
+        // Delay navigation to allow toast to be visible
+        setTimeout(() => {
+          const jobIdFromUrl = searchParams.get('jobId');
+          if (jobIdFromUrl) {
+            router.push(`/jobs/${jobIdFromUrl}?tab=candidates`);
+          } else {
+            router.push('/candidates');
+          }
+        }, 2000); // 2 second delay
       }
     } catch (error) {
       console.error('Failed to start bulk upload:', error);
@@ -211,6 +270,17 @@ function BulkUploadPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Progress Modal */}
+      <BulkUploadProgressModal
+        isOpen={showProgressModal}
+        sessionId={sessionId}
+        onClose={() => {
+          setShowProgressModal(false);
+          clearJob();
+        }}
+        onComplete={handleUploadComplete}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
@@ -479,19 +549,6 @@ function BulkUploadPageContent() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Background Processing Progress */}
-          {job && (
-            <BulkUploadProgress 
-              job={job} 
-              onClose={() => {
-                clearJob();
-                setPreviewMode(false);
-                if (job.status === 'completed') {
-                  router.push(getBackUrl());
-                }
-              }} 
-            />
-          )}
 
           {/* Error Display */}
           {error && (

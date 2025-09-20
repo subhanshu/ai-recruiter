@@ -99,6 +99,13 @@ export default function JobDetailPage() {
 
       if (jobResponse.ok) {
         const jobData = await jobResponse.json();
+        
+        // If candidates API also succeeded, merge the candidates
+        if (candidatesResponse.ok) {
+          const candidatesData = await candidatesResponse.json();
+          jobData.candidates = candidatesData;
+        }
+        
         setJob(jobData);
       } else {
         // Fallback to mock data if API fails
@@ -138,13 +145,6 @@ export default function JobDetailPage() {
           ]
         };
         setJob(mockJob);
-      }
-
-      if (candidatesResponse.ok) {
-        const candidatesData = await candidatesResponse.json();
-        if (job) {
-          setJob(prev => prev ? { ...prev, candidates: candidatesData } : null);
-        }
       }
     } catch (error) {
       console.error('Error fetching job details:', error);
@@ -188,11 +188,11 @@ export default function JobDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [jobId, job]);
+  }, [jobId]); // ✅ FIXED: Removed 'job' from dependencies
 
   useEffect(() => {
     fetchJobDetails();
-  }, [jobId, fetchJobDetails]);
+  }, [fetchJobDetails]); // fetchJobDetails now only depends on jobId
 
   const getStatusBadge = (status: string | undefined | null) => {
     if (!status) {

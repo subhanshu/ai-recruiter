@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { saveResumeFile } from '@/lib/file-storage';
+import { extractTextWithExternalAPI } from '@/lib/external-api';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -10,12 +10,12 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('resume') as File;
-    
+
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Check file type
+    // Quick validation for bulk processing optimization
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -35,35 +35,45 @@ export async function POST(request: NextRequest) {
         error: 'File too large. Please upload a file smaller than 10MB.' 
       }, { status: 400 });
     }
-
-    // Convert file to text
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
     
+    console.log(`⚡ Processing ${file.name} (${(file.size / 1024).toFixed(1)}KB) - skipping extensive validation for speed`);
+
+    // Extract text using external API with timeout
     let resumeText = '';
     
     try {
-      if (file.type === 'application/pdf') {
-        // Parse PDF using dynamic import (now with serverExternalPackages config)
-        const pdf = (await import('pdf-parse')).default;
-        const pdfData = await pdf(buffer);
-        resumeText = pdfData.text;
-      } else if (file.type === 'application/msword' || 
-                 file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        // Parse Word document using dynamic import
-        const mammoth = (await import('mammoth')).default;
-        const result = await mammoth.extractRawText({ buffer });
-        resumeText = result.value;
-      } else if (file.type === 'text/plain') {
-        // Handle plain text files
-        resumeText = buffer.toString('utf-8');
-      } else {
-        throw new Error('Unsupported file type');
+      console.log(`⚡ Starting text extraction for ${file.name} (${file.size} bytes)`);
+      const extractionStart = Date.now();
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('External API timeout after 30 seconds')), 30000)
+      );
+      
+      resumeText = await Promise.race([
+        extractTextWithExternalAPI(file),
+        timeoutPromise
+      ]) as string;
+      
+      const extractionTime = Date.now() - extractionStart;
+      console.log(`✅ Text extraction completed in ${extractionTime}ms for ${file.name}`);
+      
+    } catch (parseError: unknown) {
+      console.error('External API parsing error:', parseError);
+      
+      let errorMessage = 'Failed to extract text from file.';
+      if (parseError instanceof Error) {
+        console.error('External API error details:', {
+          message: parseError.message,
+          stack: parseError.stack,
+          name: parseError.name
+        });
+        
+        errorMessage = parseError.message;
       }
-    } catch (parseError) {
-      console.error('File parsing error:', parseError);
+      
       return NextResponse.json({ 
-        error: (parseError as Error).message || 'Failed to extract text from file. Please ensure the file is not corrupted.' 
+        error: errorMessage
       }, { status: 400 });
     }
 
@@ -73,30 +83,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Save the resume file and get the URL
-    const resumeUrl = await saveResumeFile(file);
-
-    // Use AI to parse the resume text
-    const parsedData = await parseResumeWithAI(resumeText);
+    // Parse the resume text with OpenAI
+    const parsedData = await parseResumeWithAI(resumeText, file.name);
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...parsedData,
-        resumeUrl: resumeUrl
-      },
-      message: 'Resume parsed successfully'
+      data: parsedData
     });
-
+    
   } catch (error) {
     console.error('Resume parsing error:', error);
     return NextResponse.json({ 
-      error: 'Failed to parse resume. Please try again.' 
+      error: error instanceof Error ? error.message : 'Failed to parse resume' 
     }, { status: 500 });
   }
 }
 
-async function parseResumeWithAI(resumeText: string) {
+async function parseResumeWithAI(resumeText: string, fileName: string) {
   try {
     const prompt = `Please parse the following resume text and extract structured information. Return the data in JSON format with the following structure:
 
@@ -134,6 +137,9 @@ ${resumeText}
 
 Please extract as much relevant information as possible. If a field is not found, use null or an empty array/string as appropriate.`;
 
+    console.log(`🤖 Starting OpenAI parsing for ${fileName}`);
+    const aiStart = Date.now();
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -150,6 +156,9 @@ Please extract as much relevant information as possible. If a field is not found
       max_tokens: 2000
     });
 
+    const aiTime = Date.now() - aiStart;
+    console.log(`✅ OpenAI parsing completed in ${aiTime}ms for ${fileName}`);
+    
     const responseText = completion.choices[0]?.message?.content;
     
     if (!responseText) {
@@ -200,75 +209,51 @@ Please extract as much relevant information as possible. If a field is not found
   }
 }
 
-// Fallback extraction functions
-function extractName(text: string): string {
-  const lines = text.split('\n').filter(line => line.trim().length > 0);
-  return lines[0]?.trim() || 'Unknown';
+// Basic extraction functions as fallback
+function extractName(text: string): string | null {
+  const nameMatch = text.match(/^([A-Z][a-z]+\s+[A-Z][a-z]+)/m);
+  return nameMatch ? nameMatch[1] : null;
 }
 
 function extractEmail(text: string): string | null {
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
-  const match = text.match(emailRegex);
-  return match ? match[0] : null;
+  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return emailMatch ? emailMatch[0] : null;
 }
 
 function extractPhone(text: string): string | null {
-  const phoneRegex = /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/;
-  const match = text.match(phoneRegex);
-  return match ? match[0] : null;
+  const phoneMatch = text.match(/[\+]?[1-9]?[\-\.\s]?\(?[0-9]{3}\)?[\-\.\s]?[0-9]{3}[\-\.\s]?[0-9]{4}/);
+  return phoneMatch ? phoneMatch[0] : null;
 }
 
 function extractLocation(text: string): string | null {
-  const locationRegex = /([A-Za-z\s]+,\s*[A-Z]{2})/;
-  const match = text.match(locationRegex);
-  return match ? match[0] : null;
+  const locationMatch = text.match(/([A-Z][a-z]+,?\s+[A-Z]{2}|[A-Z][a-z]+\s+[A-Z][a-z]+)/);
+  return locationMatch ? locationMatch[0] : null;
 }
 
 function extractLinkedIn(text: string): string | null {
-  const linkedinRegex = /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9-]+/;
-  const match = text.match(linkedinRegex);
-  return match ? match[0] : null;
+  const linkedinMatch = text.match(/linkedin\.com\/in\/[\w-]+/i);
+  return linkedinMatch ? `https://${linkedinMatch[0]}` : null;
 }
 
 function extractSkills(text: string): string[] {
-  const commonSkills = [
-    'JavaScript', 'Python', 'Java', 'C++', 'C#', 'React', 'Angular', 'Vue.js',
-    'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'SQL', 'MongoDB',
-    'PostgreSQL', 'MySQL', 'AWS', 'Azure', 'Docker', 'Kubernetes', 'Git',
-    'HTML', 'CSS', 'TypeScript', 'PHP', 'Ruby', 'Go', 'Rust', 'Swift',
-    'Kotlin', 'Android', 'iOS', 'Machine Learning', 'AI', 'Data Science',
-    'DevOps', 'CI/CD', 'Jenkins', 'Terraform', 'Ansible'
-  ];
-  
-  const foundSkills = commonSkills.filter(skill => 
-    text.toLowerCase().includes(skill.toLowerCase())
-  );
-  
-  return foundSkills;
+  const skillsSection = text.match(/skills?:?\s*(.+?)(?:\n\n|\n[A-Z])/i);
+  if (skillsSection) {
+    return skillsSection[1].split(/[,\n]/).map(s => s.trim()).filter(s => s.length > 0);
+  }
+  return [];
 }
 
 function extractExperience(text: string): string {
-  const experienceRegex = /(\d+)\+?\s*years?/i;
-  const match = text.match(experienceRegex);
-  return match ? `${match[1]} years` : 'Unknown';
+  const expMatch = text.match(/(\d+[\+]?\s*years?)/i);
+  return expMatch ? expMatch[0] : '';
 }
 
 function extractEducation(text: string): string {
-  const educationKeywords = ['Bachelor', 'Master', 'PhD', 'Degree', 'University', 'College', 'BSc', 'MSc', 'MBA'];
-  const lines = text.split('\n');
-  
-  for (const line of lines) {
-    for (const keyword of educationKeywords) {
-      if (line.toLowerCase().includes(keyword.toLowerCase())) {
-        return line.trim();
-      }
-    }
-  }
-  
-  return 'Not specified';
+  const eduMatch = text.match(/education:?\s*(.+?)(?:\n\n|\n[A-Z])/i);
+  return eduMatch ? eduMatch[1].trim() : '';
 }
 
 function extractSummary(text: string): string {
-  const lines = text.split('\n').filter(line => line.trim().length > 20);
-  return lines.slice(0, 2).join(' ').substring(0, 200) || 'No summary available';
+  const summaryMatch = text.match(/(?:summary|objective):?\s*(.+?)(?:\n\n|\n[A-Z])/i);
+  return summaryMatch ? summaryMatch[1].trim() : '';
 }

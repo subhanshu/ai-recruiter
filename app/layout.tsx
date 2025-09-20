@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Link from "next/link";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -124,6 +125,7 @@ export default function RootLayout({
         <main className="flex-grow-1">
           {children}
         </main>
+        <Toaster />
         
         <footer className="bg-dark text-white py-4 mt-5">
           <div className="container">

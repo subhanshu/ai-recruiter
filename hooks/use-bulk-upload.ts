@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { randomUUID } from 'crypto';
+import { useState, useCallback } from 'react';
 
 interface BulkUploadJob {
   id: string;
@@ -19,6 +18,7 @@ interface UseBulkUploadReturn {
   isUploading: boolean;
   progress: number;
   error: string | null;
+  sessionId: string | null;
   startBulkUpload: (jobId: string, candidates?: any[], resumeFiles?: File[]) => Promise<string | null>;
   clearJob: () => void;
 }
@@ -27,6 +27,7 @@ export function useBulkUpload(): UseBulkUploadReturn {
   const [job, setJob] = useState<BulkUploadJob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const progress = job ? (job.processedFiles / job.totalFiles) * 100 : 0;
 
@@ -40,9 +41,13 @@ export function useBulkUpload(): UseBulkUploadReturn {
       setError(null);
 
       if (resumeFiles && resumeFiles.length > 0) {
-        // Handle file uploads
+        // Handle file uploads with progress tracking
+        const uploadSessionId = crypto.randomUUID();
+        setSessionId(uploadSessionId);
+        
         const formData = new FormData();
         formData.append('jobId', targetJobId);
+        formData.append('sessionId', uploadSessionId);
         resumeFiles.forEach(file => {
           formData.append('files', file);
         });
@@ -59,24 +64,7 @@ export function useBulkUpload(): UseBulkUploadReturn {
 
         const result = await response.json();
         if (result.success) {
-          // Create a mock job for progress tracking
-          const mockJob = {
-            id: randomUUID(),
-            jobId: targetJobId,
-            status: 'completed' as const,
-            totalFiles: resumeFiles.length,
-            processedFiles: resumeFiles.length,
-            successfulCandidates: result.data.summary.successful,
-            failedCandidates: result.data.summary.failed,
-            errors: result.data.candidates
-              .filter((c: any) => c.status === 'invalid')
-              .map((c: any) => c.errors.join(', ')),
-            createdAt: new Date().toISOString(),
-            completedAt: new Date().toISOString()
-          };
-          
-          setJob(mockJob);
-          return mockJob.id;
+          return result.sessionId || uploadSessionId;
         }
       } else if (candidates && candidates.length > 0) {
         // Handle pre-parsed candidates
@@ -113,44 +101,15 @@ export function useBulkUpload(): UseBulkUploadReturn {
   const clearJob = useCallback(() => {
     setJob(null);
     setError(null);
+    setSessionId(null);
   }, []);
-
-  // Set up real-time progress monitoring
-  useEffect(() => {
-    if (!job?.id) return;
-
-    const eventSource = new EventSource(`/api/candidates/bulk/status?jobId=${job.id}`);
-    
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setJob(data);
-        
-        if (data.status === 'completed' || data.status === 'failed') {
-          eventSource.close();
-          setIsUploading(false);
-        }
-      } catch (err) {
-        console.error('Error parsing SSE data:', err);
-      }
-    };
-
-    eventSource.onerror = (err) => {
-      console.error('SSE error:', err);
-      eventSource.close();
-      setIsUploading(false);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [job?.id]);
 
   return {
     job,
     isUploading,
     progress,
     error,
+    sessionId,
     startBulkUpload,
     clearJob,
   };
