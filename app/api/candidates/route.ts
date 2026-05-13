@@ -60,8 +60,7 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
     
-    // Generate a unique ID for the candidate
-    const candidateId = `candidate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const candidateId = crypto.randomUUID();
     
     const { data: candidate, error } = await supabaseClient
       .from('Candidate')

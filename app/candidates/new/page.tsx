@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,10 @@ interface Job {
 function AddCandidateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const jobIdFromUrl = searchParams.get('jobId');
+  const backHref = jobIdFromUrl ? `/jobs/${jobIdFromUrl}?tab=candidates` : '/candidates';
+  const backLabel = jobIdFromUrl ? '← Back to Job Candidates' : '← Back to Candidates';
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   // Initialize candidate with default values
@@ -234,18 +239,34 @@ function AddCandidateForm() {
       });
 
       if (response.ok) {
-        // Redirect back to the job's candidates view if jobId is present
-        const jobIdFromUrl = searchParams.get('jobId');
-        if (jobIdFromUrl) {
-          router.push(`/jobs/${jobIdFromUrl}?tab=candidates`);
-        } else {
-          router.push('/candidates');
-        }
+        toast({
+          title: 'Candidate added',
+          description: `${candidate.name} has been added successfully.`,
+        });
+        router.push(backHref);
       } else {
-        console.error('Failed to create candidate');
+        let description = response.statusText;
+        try {
+          const errorJson = await response.json();
+          if (errorJson?.error) description = errorJson.error;
+        } catch {
+          // response body not JSON; keep statusText
+        }
+        console.error('Failed to create candidate:', description);
+        toast({
+          title: 'Failed to add candidate',
+          description,
+          variant: 'destructive',
+        });
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Error creating candidate:', error);
+      toast({
+        title: 'Failed to add candidate',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -259,9 +280,9 @@ function AddCandidateForm() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Link href="/candidates">
+            <Link href={backHref}>
               <Button variant="ghost" size="sm">
-                ← Back to Candidates
+                {backLabel}
               </Button>
             </Link>
           </div>
@@ -609,7 +630,7 @@ function AddCandidateForm() {
             )}
           </Button>
           
-          <Link href="/candidates">
+          <Link href={backHref}>
             <Button type="button" variant="outline">
               <X className="w-4 h-4 mr-2" />
               Cancel
