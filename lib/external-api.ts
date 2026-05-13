@@ -62,7 +62,7 @@ export async function extractTextWithExternalAPI(file: File): Promise<string> {
     
     // Create FormData for the external API
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
 
     const response = await fetch(`${EXTERNAL_TEXT_EXTRACTION_API}/extract`, {
       method: 'POST',
@@ -76,12 +76,13 @@ export async function extractTextWithExternalAPI(file: File): Promise<string> {
     const result = await response.json();
     console.log('External API response:', result);
 
-    // Handle the response format from the external API
-    if (result && result.text) {
-      return result.text;
-    } else {
-      throw new Error('External API returned no text content');
+    const first = result?.results?.[0];
+    if (first?.text && first.text.trim().length > 0) {
+      return first.text;
     }
+
+    const firstError = result?.errors?.[0]?.error;
+    throw new Error(firstError || 'External API returned no text content');
   } catch (error) {
     console.error('External API error:', error);
     throw new Error(`External text extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
