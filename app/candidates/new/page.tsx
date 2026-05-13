@@ -181,14 +181,14 @@ function AddCandidateForm() {
           phone: result.data.phone || prev.phone,
           linkedinUrl: result.data.linkedinUrl || prev.linkedinUrl,
           location: result.data.location || prev.location,
-          skills: result.data.skills ? JSON.stringify(result.data.skills) : prev.skills,
+          skills: Array.isArray(result.data.skills) ? result.data.skills.join(', ') : (result.data.skills || prev.skills),
           experience: result.data.experience || prev.experience,
           education: result.data.education || prev.education,
           summary: result.data.summary || prev.summary,
           workHistory: result.data.workHistory ? JSON.stringify(result.data.workHistory) : prev.workHistory,
           projects: result.data.projects ? JSON.stringify(result.data.projects) : prev.projects,
-          certifications: result.data.certifications ? JSON.stringify(result.data.certifications) : prev.certifications,
-          languages: result.data.languages ? JSON.stringify(result.data.languages) : prev.languages,
+          certifications: Array.isArray(result.data.certifications) ? result.data.certifications.join(', ') : (result.data.certifications || prev.certifications),
+          languages: Array.isArray(result.data.languages) ? result.data.languages.join(', ') : (result.data.languages || prev.languages),
           notes: result.data.summary || prev.notes,
           resumeUrl: result.data.resumeUrl || prev.resumeUrl
         }));
