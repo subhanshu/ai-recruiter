@@ -12,6 +12,7 @@ type ParsedJD = {
   questions: string[];
 }
 
+
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
