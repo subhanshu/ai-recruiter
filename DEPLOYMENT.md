@@ -33,13 +33,12 @@ git push origin main
 In Railway project → Variables tab:
 
 ```bash
-# Database - Get exact string from Supabase dashboard
-DATABASE_URL="postgresql://postgres.eigvloqjirrvnmbrdftd:6SegBqjdjbW8sZB3@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+# Database - Get exact string from your Supabase dashboard
+DATABASE_URL="postgresql://postgres.<project-ref>:<password>@<region>.pooler.supabase.com:5432/postgres"
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="https://eigvloqjirrvnmbrdftd.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpZ3Zsb3FqaXJydm5tYnJkZnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1ODI5NDAsImV4cCI6MjA3MjE1ODk0MH0.zEOC0D49j0IP8mW0QlmnaK0u-a1lToXgmWNmqLfbksA"
-SUPABASE_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0ZmJmeW1kb292a3dvZGF2bXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MjE2MjQsImV4cCI6MjA2OTM5NzYyNH0.52p3kd1xP2pbpDN0TL0qI1xQ8cdmusxiCPo40rxTMCk"
+# Supabase - values from your live project (Settings -> API)
+NEXT_PUBLIC_SUPABASE_URL="https://<your-project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY="<your-anon-publishable-key>"
 
 # OpenAI
 OPENAI_API_KEY="sk-..."
@@ -48,10 +47,16 @@ OPENAI_API_KEY="sk-..."
 NODE_ENV="production"
 ```
 
+> **Build-time note:** `NEXT_PUBLIC_*` variables are baked into the bundle at
+> **build time**. Set them as Railway **service** variables and redeploy (fresh
+> build) after any change. The code reads
+> `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` (with
+> `NEXT_PUBLIC_SUPABASE_ANON_KEY` accepted as a fallback).
+
 ## Database Setup (Required Before Deployment)
 
 ### Step 1: Create Tables in Supabase
-1. Go to [Supabase Dashboard](https://supabase.com/dashboard/project/eigvloqjirrvnmbrdftd)
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard) and open your project
 2. Navigate to **SQL Editor**
 3. Copy and paste the entire contents of `schema.sql`
 4. Click **Run** to execute

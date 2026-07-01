@@ -3,8 +3,6 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Ensure proper build output
-  output: 'standalone',
   // TypeScript configuration
   typescript: {
     ignoreBuildErrors: false,
