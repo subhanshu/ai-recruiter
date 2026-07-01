@@ -1,4 +1,5 @@
 # AI Recruiter Web App
+a
 
 A Next.js application that automates the initial screening process for job candidates using AI. It enables recruiters to create job descriptions, generate screening questions, conduct AI-based interviews, store and summarize interview results, and rank candidates based on suitability.
 
